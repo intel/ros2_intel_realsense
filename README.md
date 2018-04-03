@@ -77,7 +77,7 @@ $ ros2 run ros1_bridge dynamic_bridge
 
 # in console #3 launch rviz
 $ source /opt/ros/kinetic/setup.bash
-$ rosrun rviz rviz -d ~/ros2_ws/src/realsense_ros2/realsense_ros2_camera/rviz/ros2.rviz
+$ rosrun rviz rviz -d ~/ros2_ws/src/ros2_intel_realsense/realsense_ros2_camera/rviz/ros2.rviz
 
 # in console #4 launch realsense_ros2_camera
 $ source ~/ros2_ws/install/local_setup.bash
