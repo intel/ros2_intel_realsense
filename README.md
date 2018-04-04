@@ -92,6 +92,11 @@ NOTE: visulization in ROS2 pending on [rviz2](https://github.com/ros2/rviz).
 
 ![realsense_ros2_camera visualization results](https://github.com/intel/ros2_intel_realsense/raw/master/realsense_ros2_camera/rviz/ros2_rviz.png "realsense_ros2_camera visualization results")
 
+### Run tests
+```Shell
+$ ament test --only-packages realsense_ros2_camera
+```
+
 ## Known Issues
 * This ROS2 node does not currently provide any dynamic reconfigure support for camera properties/presets.
 * ROS2 compatible unit-tests will be added soon.

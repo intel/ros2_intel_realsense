@@ -28,6 +28,8 @@
   <exec_depend>realsense_camera_msgs</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
 
+  <test_depend>ament_cmake_gtest</test_depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
