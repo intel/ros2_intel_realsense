@@ -1,5 +1,16 @@
-// License: Apache 2.0. See LICENSE file in root directory.
-// Copyright(c) 2017 Intel Corporation. All Rights Reserved
+// Copyright (c) 2017 Intel Corporation. All Rights Reserved
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <chrono>
 #include <gtest/gtest.h>
@@ -61,12 +72,12 @@ int encoding2Mat(const std::string & encoding)
   }
 }
 
-void imageDepthCallback()
+void imageDepthCallback(const sensor_msgs::msg::Image::SharedPtr)
 {
   g_depth_recv = true;
 }
 
-void imageColorCallback(const sensor_msgs::msg::Image::SharedPtr & msg)
+void imageColorCallback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   static unsigned int fps = 0;
   rclcpp::Clock ros_clock(RCL_ROS_TIME);
@@ -98,7 +109,7 @@ void imageColorCallback(const sensor_msgs::msg::Image::SharedPtr & msg)
   }
 }
 
-void imageInfrared1Callback(const sensor_msgs::msg::Image::SharedPtr & msg)
+void imageInfrared1Callback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
@@ -118,7 +129,7 @@ void imageInfrared1Callback(const sensor_msgs::msg::Image::SharedPtr & msg)
   g_infrared1_recv = true;
 }
 
-void imageInfrared2Callback(const sensor_msgs::msg::Image::SharedPtr & msg)
+void imageInfrared2Callback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
@@ -141,7 +152,7 @@ void imageInfrared2Callback(const sensor_msgs::msg::Image::SharedPtr & msg)
   g_infrared2_recv = true;
 }
 
-void pcCallback(const sensor_msgs::msg::PointCloud2::SharedPtr & msg)
+void pcCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 {
   double pc_depth_total = 0.0;
   int pc_depth_count = 0;
@@ -161,7 +172,7 @@ void pcCallback(const sensor_msgs::msg::PointCloud2::SharedPtr & msg)
   g_pc_recv = true;
 }
 
-void tfCallback(const tf2_msgs::msg::TFMessage::SharedPtr & msg)
+void tfCallback(const tf2_msgs::msg::TFMessage::SharedPtr msg)
 {
   for (auto tf : msg->transforms) {
     if (tf.header.frame_id == "camera_color_frame") {
@@ -234,22 +245,22 @@ int main(int argc, char * argv[]) try
   rclcpp::init(argc, argv);
   auto node = rclcpp::Node::make_shared("realsense_test");
   auto sub1 = node->create_subscription<sensor_msgs::msg::Image>("camera/depth/image_rect_raw",
-      [](const sensor_msgs::msg::Image::SharedPtr msg) -> void {imageDepthCallback();});
+      imageDepthCallback, rmw_qos_profile_default);
 
   auto sub2 = node->create_subscription<sensor_msgs::msg::Image>("camera/color/image_raw",
-      [](const sensor_msgs::msg::Image::SharedPtr msg) -> void {imageColorCallback(msg);});
+      imageColorCallback, rmw_qos_profile_default);
 
   auto sub3 = node->create_subscription<sensor_msgs::msg::Image>("camera/infra1/image_rect_raw",
-      [](const sensor_msgs::msg::Image::SharedPtr msg) -> void {imageInfrared1Callback(msg);});
+      imageInfrared1Callback, rmw_qos_profile_default);
 
   auto sub4 = node->create_subscription<sensor_msgs::msg::Image>("camera/infra2/image_rect_raw",
-      [](const sensor_msgs::msg::Image::SharedPtr msg) -> void {imageInfrared2Callback(msg);});
+      imageInfrared2Callback, rmw_qos_profile_default);
 
   auto sub5 = node->create_subscription<sensor_msgs::msg::PointCloud2>("camera/depth/color/points",
-      [](const sensor_msgs::msg::PointCloud2::SharedPtr msg) -> void {pcCallback(msg);});
+      pcCallback, rmw_qos_profile_default);
 
   auto sub6 = node->create_subscription<tf2_msgs::msg::TFMessage>("tf_static",
-      [](const tf2_msgs::msg::TFMessage::SharedPtr msg) -> void {tfCallback(msg);});
+      tfCallback, rmw_qos_profile_default);
 
   system("realsense_ros2_camera &");
 
