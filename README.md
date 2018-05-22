@@ -40,7 +40,7 @@ To start the camera node in ROS2, plug in the camera, then type the following co
 
 ```bash
 # To launch with "ros2 run"
-$ ros2 run realsense_ros2_camera realsenes_ros2_camera
+$ ros2 run realsense_ros2_camera realsense_ros2_camera
 # OR, to invoke the executable directly
 $ realsense_ros2_camera
 ```

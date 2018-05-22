@@ -13,7 +13,7 @@ endif()
 # Compiler Defense Flags
 if(UNIX OR APPLE)
   # Linker flags.
-  if( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
     # GCC specific flags. ICC is compatible with them.
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -z noexecstack -z relro -z now")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -z noexecstack -z relro -z now")
@@ -24,7 +24,7 @@ if(UNIX OR APPLE)
   endif()
 
   # Compiler flags.
-  if( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     # GCC specific flags.
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9 OR CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 4.9)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -fstack-protector-strong")
@@ -34,7 +34,7 @@ if(UNIX OR APPLE)
   elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     # Clang is compatbile with some of the flags.
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -fstack-protector")
-  elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel" )
+  elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
     # Same as above, with exception that ICC compilation crashes with -fPIE option, even
     # though it uses -pie linker option that require -fPIE during compilation. Checksec
     # shows that it generates correct PIE anyway if only -pie is provided.
@@ -54,7 +54,7 @@ if(NOT realsense2_FOUND)
   message(FATAL_ERROR "\n\n Intel RealSense SDK 2.0 is missing, please install it from https://github.com/IntelRealSense/librealsense/releases\n\n")
 endif()
 
-if (CMAKE_BUILD_TYPE EQUAL "RELEASE")
+if(CMAKE_BUILD_TYPE EQUAL "RELEASE")
   message(STATUS "Create Release Build.")
   set(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
 else()
