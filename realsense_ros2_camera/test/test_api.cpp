@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Intel Corporation. All Rights Reserved
+// Copyright (c) 2018 Intel Corporation. All Rights Reserved
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
+// cpplint: c system headers
 #include <gtest/gtest.h>
 #include <librealsense2/rs.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_msgs/msg/tf_message.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-
 #include <realsense_ros2_camera/constants.h>
+// cpplint: c++ system headers
+#include <chrono>
+#include <map>
+#include <string>
 
 bool g_enable_color = true;
 bool g_color_recv = false;
@@ -48,7 +50,7 @@ float g_pc_depth_avg = 0.0f;
 bool g_tf_recv = false;
 bool g_tf_color = false;
 
-unsigned int g_fps = 0;
+int g_fps = 0;
 float g_latency = 0.0f;
 
 int encoding2Mat(const std::string & encoding)
@@ -236,7 +238,7 @@ TEST(TestAPI, testLatency) {
 }
 
 TEST(TestAPI, testFPS) {
-  EXPECT_TRUE(g_fps > 0);
+  EXPECT_GT(g_fps, 0);
 }
 
 int main(int argc, char * argv[]) try

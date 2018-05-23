@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Intel Corporation. All Rights Reserved
+// Copyright (c) 2018 Intel Corporation. All Rights Reserved
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <csignal>
+// cpplint: c system headers
 #include <eigen3/Eigen/Geometry>
-#include <iostream>
-#include <map>
 #include <builtin_interfaces/msg/time.hpp>
 #include <console_bridge/console.h>
 #include <cv_bridge/cv_bridge.h>
@@ -34,6 +32,16 @@
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
 #include <librealsense2/hpp/rs_processing.hpp>
+// cpplint: c++ system headers
+#include <algorithm>
+#include <csignal>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+// cpplint: other headers
 #include "realsense_ros2_camera/constants.h"
 #include "realsense_camera_msgs/msg/imu_info.hpp"
 #include "realsense_camera_msgs/msg/extrinsics.hpp"
@@ -198,29 +206,37 @@ private:
     this->get_parameter_or("enable_imu", _enable[GYRO], ENABLE_IMU);
     this->get_parameter_or("enable_imu", _enable[ACCEL], ENABLE_IMU);
 
-    this->get_parameter_or("base_frame_id", _base_frame_id, DEFAULT_BASE_FRAME_ID);
-    this->get_parameter_or("depth_frame_id", _frame_id[DEPTH], DEFAULT_DEPTH_FRAME_ID);
-    this->get_parameter_or("infra1_frame_id", _frame_id[INFRA1], DEFAULT_INFRA1_FRAME_ID);
-    this->get_parameter_or("infra2_frame_id", _frame_id[INFRA2], DEFAULT_INFRA2_FRAME_ID);
-    this->get_parameter_or("color_frame_id", _frame_id[COLOR], DEFAULT_COLOR_FRAME_ID);
-    this->get_parameter_or("fisheye_frame_id", _frame_id[FISHEYE], DEFAULT_FISHEYE_FRAME_ID);
-    this->get_parameter_or("imu_gyro_frame_id", _frame_id[GYRO], DEFAULT_IMU_FRAME_ID);
-    this->get_parameter_or("imu_accel_frame_id", _frame_id[ACCEL], DEFAULT_IMU_FRAME_ID);
+    this->get_parameter_or("base_frame_id", _base_frame_id,
+      std::string(DEFAULT_BASE_FRAME_ID));
+    this->get_parameter_or("depth_frame_id", _frame_id[DEPTH],
+      std::string(DEFAULT_DEPTH_FRAME_ID));
+    this->get_parameter_or("infra1_frame_id", _frame_id[INFRA1],
+      std::string(DEFAULT_INFRA1_FRAME_ID));
+    this->get_parameter_or("infra2_frame_id", _frame_id[INFRA2],
+      std::string(DEFAULT_INFRA2_FRAME_ID));
+    this->get_parameter_or("color_frame_id", _frame_id[COLOR],
+      std::string(DEFAULT_COLOR_FRAME_ID));
+    this->get_parameter_or("fisheye_frame_id", _frame_id[FISHEYE],
+      std::string(DEFAULT_FISHEYE_FRAME_ID));
+    this->get_parameter_or("imu_gyro_frame_id", _frame_id[GYRO],
+      std::string(DEFAULT_IMU_FRAME_ID));
+    this->get_parameter_or("imu_accel_frame_id", _frame_id[ACCEL],
+      std::string(DEFAULT_IMU_FRAME_ID));
 
     this->get_parameter_or("depth_optical_frame_id", _optical_frame_id[DEPTH],
-      DEFAULT_DEPTH_OPTICAL_FRAME_ID);
+      std::string(DEFAULT_DEPTH_OPTICAL_FRAME_ID));
     this->get_parameter_or("infra1_optical_frame_id", _optical_frame_id[INFRA1],
-      DEFAULT_INFRA1_OPTICAL_FRAME_ID);
+      std::string(DEFAULT_INFRA1_OPTICAL_FRAME_ID));
     this->get_parameter_or("infra2_optical_frame_id", _optical_frame_id[INFRA2],
-      DEFAULT_INFRA2_OPTICAL_FRAME_ID);
+      std::string(DEFAULT_INFRA2_OPTICAL_FRAME_ID));
     this->get_parameter_or("color_optical_frame_id", _optical_frame_id[COLOR],
-      DEFAULT_COLOR_OPTICAL_FRAME_ID);
+      std::string(DEFAULT_COLOR_OPTICAL_FRAME_ID));
     this->get_parameter_or("fisheye_optical_frame_id", _optical_frame_id[FISHEYE],
-      DEFAULT_FISHEYE_OPTICAL_FRAME_ID);
+      std::string(DEFAULT_FISHEYE_OPTICAL_FRAME_ID));
     this->get_parameter_or("gyro_optical_frame_id", _optical_frame_id[GYRO],
-      DEFAULT_GYRO_OPTICAL_FRAME_ID);
+      std::string(DEFAULT_GYRO_OPTICAL_FRAME_ID));
     this->get_parameter_or("accel_optical_frame_id", _optical_frame_id[ACCEL],
-      DEFAULT_ACCEL_OPTICAL_FRAME_ID);
+      std::string(DEFAULT_ACCEL_OPTICAL_FRAME_ID));
   }
 
   void setupDevice()
@@ -238,7 +254,7 @@ private:
       }
 
       // Take the first device in the list.
-      // TODO: Add an ability to get the specific device to work with from outside
+      // Add an ability to get the specific device to work with from outside.
       _dev = list.front();
       _ctx->set_devices_changed_callback([this](rs2::event_information & info)
         {
@@ -296,7 +312,8 @@ private:
       streams.insert(streams.end(), HID_STREAMS.begin(), HID_STREAMS.end());
       for (auto & elem : streams) {
         for (auto & stream_index : elem) {
-          if (true == _enable[stream_index] && _sensors.find(stream_index) == _sensors.end()) {             // check if device supports the enabled stream
+          if (true == _enable[stream_index] && _sensors.find(stream_index) == _sensors.end()) {
+            // check if device supports the enabled stream
             RCUTILS_LOG_INFO("%s sensor isn't supported by current device! -- Skipping...",
               rs2_stream_to_string(stream_index.first));
             _enable[stream_index] = false;
@@ -410,10 +427,10 @@ private:
               }
             }
             if (_enabled_profiles.find(elem) == _enabled_profiles.end()) {
-              RCUTILS_LOG_WARN("Given stream configuration is not supported by the device! \
-                Stream: %s, Format: %d, Width: %d, Height: %d, FPS: %d", rs2_stream_to_string(
-                  elem.first),
-                _format[elem], _width[elem], _height[elem], _fps[elem]);
+              RCUTILS_LOG_WARN("Given stream configuration is not supported by the device!")
+              RCUTILS_LOG_WARN("Stream: %s, Format: %d, Width: %d, Height: %d, FPS: %d",
+                rs2_stream_to_string(elem.first), _format[elem], _width[elem], _height[elem],
+                _fps[elem]);
               _enable[elem] = false;
             }
           }
@@ -430,8 +447,8 @@ private:
 
       auto frame_callback = [this](rs2::frame frame)
         {
-          // We compute a ROS timestamp which is based on an initial ROS time at point of first frame,
-          // and the incremental timestamp from the camera.
+          // We compute a ROS timestamp which is based on an initial ROS time at point of first
+          // frame, and the incremental timestamp from the camera.
           // In sync mode the timestamp is based on ROS time
           if (false == _intialize_time_base) {
             _intialize_time_base = true;
@@ -476,8 +493,7 @@ private:
             publishFrame(frame, t);
           }
 
-          if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived/* &&
-                       (0 != _pointcloud_publisher.getNumSubscribers())*/) {
+          if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
             RCUTILS_LOG_DEBUG("publishPCTopic(...)");
             publishPCTopic(t);
           }
@@ -510,7 +526,7 @@ private:
             sens->start(frame_callback);
           }
         }
-      }          //end for
+      }          // end for
 
       if (_sync_frames) {
         _syncer.start(frame_callback);
@@ -559,8 +575,9 @@ private:
             rs2_timestamp_domain_to_string(frame.get_frame_timestamp_domain()));
 
             auto stream_index = (stream == GYRO.first) ? GYRO : ACCEL;
-            if (1/*0 != _info_publisher[stream_index].getNumSubscribers() ||
-                            0 != _imu_publishers[stream_index].getNumSubscribers()*/) {
+            // if (0 != _info_publisher[stream_index].getNumSubscribers() ||
+            //    0 != _imu_publishers[stream_index].getNumSubscribers())
+            {
               uint64_t elapsed_camera_ns = (frame.get_timestamp() - _camera_time_base) * 1000000;
               rclcpp::Time t(_ros_time_base.nanoseconds() + elapsed_camera_ns, RCL_ROS_TIME);
 
@@ -664,13 +681,13 @@ private:
       exit(1);
     }
 
-    // TODO: Why Depth to Color?
+    // Why Depth to Color?
     if (stream_index == DEPTH && _enable[DEPTH] && _enable[COLOR]) {
       _depth2color_extrinsics = depth_profile.get_extrinsics_to(_enabled_profiles[COLOR].front());
       // set depth to color translation values in Projection matrix (P)
-      _camera_info[stream_index].p.at(3) = _depth2color_extrinsics.translation[0];               // Tx
-      _camera_info[stream_index].p.at(7) = _depth2color_extrinsics.translation[1];               // Ty
-      _camera_info[stream_index].p.at(11) = _depth2color_extrinsics.translation[2];              // Tz
+      _camera_info[stream_index].p.at(3) = _depth2color_extrinsics.translation[0];             // Tx
+      _camera_info[stream_index].p.at(7) = _depth2color_extrinsics.translation[1];             // Ty
+      _camera_info[stream_index].p.at(11) = _depth2color_extrinsics.translation[2];            // Tz
     }
 
     _camera_info[stream_index].distortion_model = "plumb_bob";
@@ -855,7 +872,7 @@ private:
       ir2_2_ir2o_msg.transform.rotation.w = ir2_2_ir2o.getW();
       _static_tf_broadcaster.sendTransform(ir2_2_ir2o_msg);
     }
-    // TODO: Publish Fisheye TF
+    // Publish Fisheye TF
   }
 
   void publishPCTopic(const rclcpp::Time & t)
@@ -913,8 +930,9 @@ private:
         if (color_pixel[1] < 0.f || color_pixel[1] > color_intrinsics.height ||
           color_pixel[0] < 0.f || color_pixel[0] > color_intrinsics.width)
         {
-          // For out of bounds color data, default to a shade of blue in order to visually distinguish holes.
-          // This color value is same as the librealsense out of bounds color value.
+          // For out of bounds color data, default to a shade of blue in order to visually
+          // distinguish holes. This color value is same as the librealsense out of bounds color
+          // value.
           *iter_r = static_cast<uint8_t>(96);
           *iter_g = static_cast<uint8_t>(157);
           *iter_b = static_cast<uint8_t>(198);
@@ -1024,12 +1042,13 @@ private:
     RCUTILS_LOG_DEBUG("publishFrame(...)");
     stream_index_pair stream{f.get_profile().stream_type(), f.get_profile().stream_index()};
     auto & image = _image[stream];
-    image.data = (uint8_t *)f.get_data();
+    image.data = const_cast<uchar *>(reinterpret_cast<const uchar *>(f.get_data()));
     ++(_seq[stream]);
     auto & info_publisher = _info_publisher[stream];
     auto & image_publisher = _image_publishers[stream];
-    if (1/*0 != info_publisher.getNumSubscribers() ||
-               0 != image_publisher.getNumSubscribers()*/) {
+    // if (0 != info_publisher.getNumSubscribers() ||
+    //     0 != image_publisher.getNumSubscribers())
+    {
       auto width = 0;
       auto height = 0;
       auto bpp = 1;
@@ -1120,9 +1139,9 @@ private:
   bool _pointcloud;
   rs2::asynchronous_syncer _syncer;
   rs2_extrinsics _depth2color_extrinsics;
-};    //end class
+};  // end class
 
-}//end namespace
+}  // namespace realsense_ros2_camera
 
 int main(int argc, char * argv[])
 {
