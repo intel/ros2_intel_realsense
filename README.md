@@ -8,7 +8,7 @@ The following instructions were verified with ROS2 Ardent on **Ubutnu 16.04**.
 ### Step 1: Install the Intel&reg; RealSense&trade; SDK 2.0
 Install tag v2.9.1 [Intel&reg; RealSense&trade; SDK 2.0](https://github.com/IntelRealSense/librealsense/tree/v2.9.1) and follow the instructions under [Linux Installation](https://github.com/IntelRealSense/librealsense/blob/v2.9.1/doc/installation.md).
 
-### Step 2: Install the ROS2 distribution
+### Step 2: Install the ROS2 dependents
 - #### Install [ROS2 Ardent Apalone](https://github.com/ros2/ros2/wiki/Release-Ardent-Apalone) from binary or source.
 - #### Source the environment
 ```bash
@@ -17,6 +17,14 @@ $ source /opt/ros/ardent/setup.bash
 # from source install
 $ cd ~/ros2_ws
 $ source install/local_setup.bash
+```
+- #### Install [ros2 cv_bridge](https://github.com/ros-perception/vision_opencv/tree/ros2)
+```bash
+$ cd ~/ros2_ws/src
+$ git clone https://github.com/ros-perception/vision_opencv.git
+$ git checkout ros2
+$ cd ~/ros2_ws
+$ ament build --build-tests --symlink-install --only cv_bridge 
 ```
 
 ### Step 3: Install Intel&reg; RealSense&trade; ROS2 from Sources
@@ -29,7 +37,7 @@ $ cd ~/ros2_ws/src
 
 ```bash
 $ cd ..
-$ ament build --build-tests --symlink-install --only cv_bridge realsense_camera_msgs realsense_ros2_camera
+$ ament build --build-tests --symlink-install --only realsense_camera_msgs realsense_ros2_camera
 $ source ./install/local_setup.bash
 ```
 
