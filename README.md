@@ -107,7 +107,7 @@ $ ament test --only-packages realsense_ros2_camera
 
 ## Known Issues
 * This ROS2 node does not currently provide any dynamic reconfigure support for camera properties/presets.
-* ROS2 compatible unit-tests will be added soon.
+* We support Ubuntu Linux Xenial Xerus 16.04 on 64-bit, but not support Mac OS X 10.12 (Sierra) and Windows 10 yet.
 
 ## Todo
 A few features to be ported from the latest realsense_ros_camera v2.0.2
