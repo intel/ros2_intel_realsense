@@ -75,12 +75,14 @@ find_package(tf2 REQUIRED)
 find_package(realsense_camera_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(image_geometry REQUIRED)
 
 include_directories(
   include
   ${rclcpp_INCLUDE_DIRS}
   ${rmw_implementation_INCLUDE_DIRS}
   ${std_msgs_INCLUDE_DIRS}
+  ${image_geometry_INCLUDE_DIRS}
   ${sensor_msgs_INCLUDE_DIRS}
   ${cv_bridge_INCLUDE_DIRS}
   ${tf2_ros_INCLUDE_DIRS}
@@ -102,6 +104,7 @@ target_link_libraries(${PROJECT_NAME}
   ${tf2_LIBRARIES}
   ${realsense_camera_msgs_LIBRARIES}
   ${cv_bridge_LIBRARIES}
+  ${image_geometry_LIBRARIES}
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
@@ -113,6 +116,7 @@ ament_target_dependencies(${PROJECT_NAME}
   realsense_camera_msgs
   cv_bridge
   OpenCV
+  image_geometry
 )
 
 # Install binaries
