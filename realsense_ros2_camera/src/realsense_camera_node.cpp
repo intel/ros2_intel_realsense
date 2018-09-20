@@ -17,6 +17,9 @@
 #include <builtin_interfaces/msg/time.hpp>
 #include <console_bridge/console.h>
 #include <cv_bridge/cv_bridge.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <image_geometry/pinhole_camera_model.h>
+#include <opencv2/opencv.hpp>
 #include <rcl/time.h>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/clock.hpp>
@@ -340,6 +343,8 @@ private:
         "camera/depth/camera_info", 1);
 
       if (_pointcloud) {
+        _pointcloud_publisher_align = this->create_publisher<sensor_msgs::msg::Image>(
+          "/camera/depth/color/aligned_depth_images", 1);
         _pointcloud_publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>(
           "/camera/depth/color/points", 1);
       }
@@ -466,15 +471,22 @@ private:
           }
           auto is_color_frame_arrived = false;
           auto is_depth_frame_arrived = false;
-          if (frame.is<rs2::frameset>()) {
+          rs2::frame depth_frame;
+          if (frame.is<rs2::frameset>()) 
+          {
             RCUTILS_LOG_DEBUG("Frameset arrived");
             auto frameset = frame.as<rs2::frameset>();
-            for (auto it = frameset.begin(); it != frameset.end(); ++it) {
+            for (auto it = frameset.begin(); it != frameset.end(); ++it) 
+            {
               auto f = (*it);
               auto stream_type = f.get_profile().stream_type();
-              if (RS2_STREAM_COLOR == stream_type) {
+              if (stream_type != RS2_STREAM_DEPTH) 
+              {
                 is_color_frame_arrived = true;
-              } else if (RS2_STREAM_DEPTH == stream_type) {
+              } 
+              else
+              {
+                depth_frame = f;
                 is_depth_frame_arrived = true;
               }
 
@@ -483,8 +495,14 @@ private:
                 rs2_stream_to_string(stream_type), frame.get_frame_number(),
                 frame.get_timestamp(), t.nanoseconds());
               publishFrame(f, t);
-            }
-          } else {
+            }              
+            if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived)
+              {
+                RCUTILS_LOG_DEBUG("publishPCTopic(...)");
+                publishAlignedDepthToOthers(depth_frame, t);
+              }
+          }
+          else {
             auto stream_type = frame.get_profile().stream_type();
             RCUTILS_LOG_DEBUG(
               "%s video frame arrived. frame_number: %llu ; frame_TS: %f ; ros_TS(NSec): %lu",
@@ -493,10 +511,6 @@ private:
             publishFrame(frame, t);
           }
 
-          if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
-            RCUTILS_LOG_DEBUG("publishPCTopic(...)");
-            publishPCTopic(t);
-          }
         };
 
       // Streaming IMAGES
@@ -874,84 +888,155 @@ private:
     }
     // Publish Fisheye TF
   }
-
-  void publishPCTopic(const rclcpp::Time & t)
+  void alignFrame(const rs2_intrinsics& from_intrin,
+                                    const rs2_intrinsics& other_intrin,
+                                    rs2::frame from_image,
+                                    uint32_t output_image_bytes_per_pixel,
+                                    const rs2_extrinsics& from_to_other,
+                                    std::vector<uint8_t>& out_vec)
   {
-    auto color_intrinsics = _stream_intrinsics[COLOR];
-    auto image_depth16 = reinterpret_cast<const uint16_t *>(_image[DEPTH].data);
-    auto depth_intrinsics = _stream_intrinsics[DEPTH];
-    sensor_msgs::msg::PointCloud2 msg_pointcloud;
-    msg_pointcloud.header.stamp = t;
-    msg_pointcloud.header.frame_id = _optical_frame_id[DEPTH];
-    msg_pointcloud.width = depth_intrinsics.width;
-    msg_pointcloud.height = depth_intrinsics.height;
-    msg_pointcloud.is_dense = true;
+      static const auto meter_to_mm = 0.001f;
+      uint8_t* p_out_frame = out_vec.data();
 
-    sensor_msgs::PointCloud2Modifier modifier(msg_pointcloud);
+      static const auto blank_color = 0x00;
+      memset(p_out_frame, blank_color, other_intrin.height * other_intrin.width * output_image_bytes_per_pixel);
 
-    modifier.setPointCloud2Fields(4,
-      "x", 1, sensor_msgs::msg::PointField::FLOAT32,
-      "y", 1, sensor_msgs::msg::PointField::FLOAT32,
-      "z", 1, sensor_msgs::msg::PointField::FLOAT32,
-      "rgb", 1, sensor_msgs::msg::PointField::FLOAT32);
-    modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
+      auto p_from_frame = reinterpret_cast<const uint8_t*>(from_image.get_data());
+      auto from_stream_type = from_image.get_profile().stream_type();
+      float depth_units = ((from_stream_type == RS2_STREAM_DEPTH)?_depth_scale_meters:1.f);
+  #pragma omp parallel for schedule(dynamic)
+      for (int from_y = 0; from_y < from_intrin.height; ++from_y)
+      {
+          int from_pixel_index = from_y * from_intrin.width;
+          for (int from_x = 0; from_x < from_intrin.width; ++from_x, ++from_pixel_index)
+          {
+              // Skip over depth pixels with the value of zero
+              float depth = (from_stream_type == RS2_STREAM_DEPTH)?(depth_units * ((const uint16_t*)p_from_frame)[from_pixel_index]): 1.f;
+              if (depth)
+              {
+                  // Map the top-left corner of the depth pixel onto the other image
+                  float from_pixel[2] = { from_x - 0.5f, from_y - 0.5f }, from_point[3], other_point[3], other_pixel[2];
+                  rs2_deproject_pixel_to_point(from_point, &from_intrin, from_pixel, depth);
+                  rs2_transform_point_to_point(other_point, &from_to_other, from_point);
+                  rs2_project_point_to_pixel(other_pixel, &other_intrin, other_point);
+                  const int other_x0 = static_cast<int>(other_pixel[0] + 0.5f);
+                  const int other_y0 = static_cast<int>(other_pixel[1] + 0.5f);
 
-    sensor_msgs::PointCloud2Iterator<float> iter_x(msg_pointcloud, "x");
-    sensor_msgs::PointCloud2Iterator<float> iter_y(msg_pointcloud, "y");
-    sensor_msgs::PointCloud2Iterator<float> iter_z(msg_pointcloud, "z");
+                  // Map the bottom-right corner of the depth pixel onto the other image
+                  from_pixel[0] = from_x + 0.5f; from_pixel[1] = from_y + 0.5f;
+                  rs2_deproject_pixel_to_point(from_point, &from_intrin, from_pixel, depth);
+                  rs2_transform_point_to_point(other_point, &from_to_other, from_point);
+                  rs2_project_point_to_pixel(other_pixel, &other_intrin, other_point);
+                  const int other_x1 = static_cast<int>(other_pixel[0] + 0.5f);
+                  const int other_y1 = static_cast<int>(other_pixel[1] + 0.5f);
 
-    sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(msg_pointcloud, "r");
-    sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(msg_pointcloud, "g");
-    sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(msg_pointcloud, "b");
+                  if (other_x0 < 0 || other_y0 < 0 || other_x1 >= other_intrin.width || other_y1 >= other_intrin.height)
+                      continue;
 
-    float depth_point[3], color_point[3], color_pixel[2], scaled_depth;
-    unsigned char * color_data = _image[COLOR].data;
+                  for (int y = other_y0; y <= other_y1; ++y)
+                  {
+                      for (int x = other_x0; x <= other_x1; ++x)
+                      {
+                          int out_pixel_index = y * other_intrin.width + x;
+                          uint16_t* p_from_depth_frame = (uint16_t*)p_from_frame;
+                          uint16_t* p_out_depth_frame = (uint16_t*)p_out_frame;
+                          p_out_depth_frame[out_pixel_index] = p_from_depth_frame[from_pixel_index] * (  depth_units / meter_to_mm);
+                      }
+                  }
+              }
+          }
+      }
+  }
+  rs2_extrinsics getRsExtrinsics(const stream_index_pair& from_stream, const stream_index_pair& to_stream)
+  {
+      auto& from = _enabled_profiles[from_stream].front();
+      auto& to = _enabled_profiles[to_stream].front();
+      return from.get_extrinsics_to(to);
+  }
+  void publishAlignedDepthToOthers(rs2::frame depth_frame, const rclcpp::Time & t)
+  {
+    auto from_image_frame = depth_frame.as<rs2::video_frame>();
+    std::vector<uint8_t> out_vec;
+    out_vec.resize(_width[DEPTH] * _height[DEPTH] * _unit_step_size[DEPTH]);
+    auto ex = getRsExtrinsics(DEPTH, COLOR);
+    alignFrame(_stream_intrinsics[DEPTH], _stream_intrinsics[COLOR],
+                depth_frame, from_image_frame.get_bytes_per_pixel(),
+                ex, out_vec);
+    auto from_image = cv::Mat(_width[DEPTH], _height[DEPTH], _image_format[DEPTH], cv::Scalar(0, 0, 0));
+    from_image.data = out_vec.data();
+    RCUTILS_LOG_DEBUG("aligned done!");
+    sensor_msgs::msg::Image::SharedPtr img;
+    auto info_msg = _camera_info[DEPTH];
+    img = cv_bridge::CvImage(std_msgs::msg::Header(), sensor_msgs::image_encodings::TYPE_16UC1, from_image).toImageMsg();
+    auto image = depth_frame.as<rs2::video_frame>();
+    auto bpp = image.get_bytes_per_pixel();
+    auto height = image.get_height();
+    auto width = image.get_width();
+    img->width = width;
+    img->height = height;
+    img->is_bigendian = false;
+    img->step = width * bpp;
+    img->header.frame_id = "aligned_depth";
+    img->header.stamp = t;
+    _pointcloud_publisher_align->publish(img);
+    // img is the aligned depth image
+    sensor_msgs::msg::PointCloud2 cloud_msg;
+    cloud_msg.header.stamp = t;
+    cloud_msg.header.frame_id = _optical_frame_id[DEPTH];
+    cloud_msg.width = width;
+    cloud_msg.height = height;
+    cloud_msg.is_dense = true;
+    cloud_msg.is_bigendian = false;
+    sensor_msgs::PointCloud2Modifier pcd_modifier(cloud_msg);
+    pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
+    model_.fromCameraInfo(info_msg);
+    // convert process
+    float center_x = model_.cx();
+    float center_y = model_.cy();
+    double unit_scaling = 0.001;
+    float constant_x = unit_scaling / model_.fx();
+    float constant_y = unit_scaling / model_.fy();
+    float bad_point = std::numeric_limits<float>::quiet_NaN ();
+    const uint16_t* depth_row = reinterpret_cast<const uint16_t *>(&img->data[0]);
+    int row_step = img->step / sizeof(uint16_t);
+    cv::MatIterator_<cv::Vec3b> it;
+    it = _image[COLOR].begin<cv::Vec3b>();
 
-    // Fill the PointCloud2 fields
-    for (int y = 0; y < depth_intrinsics.height; ++y) {
-      for (int x = 0; x < depth_intrinsics.width; ++x) {
-        scaled_depth = static_cast<float>(*image_depth16) * _depth_scale_meters;
-        float depth_pixel[2] = {static_cast<float>(x), static_cast<float>(y)};
-        rs2_deproject_pixel_to_point(depth_point, &depth_intrinsics, depth_pixel, scaled_depth);
+    sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msg, "x");
+    sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msg, "y");
+    sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_msg, "z");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(cloud_msg, "r");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(cloud_msg, "g");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(cloud_msg, "b");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_a(cloud_msg, "a");
+    // depth_row += row_step;
+    for (size_t v = 0; v < img->height; ++v, depth_row += row_step)
+    {
+      for (size_t u = 0; u < img->width; ++u, ++iter_x, ++iter_y, ++iter_z, ++iter_a, ++iter_r, ++iter_g, ++iter_b)
+      {
+        uint16_t depth = depth_row[u];
 
-        if (depth_point[2] <= 0.f || depth_point[2] > 5.f) {
-          depth_point[0] = 0.f;
-          depth_point[1] = 0.f;
-          depth_point[2] = 0.f;
-        }
-
-        *iter_x = depth_point[0];
-        *iter_y = depth_point[1];
-        *iter_z = depth_point[2];
-
-        rs2_transform_point_to_point(color_point, &_depth2color_extrinsics, depth_point);
-        rs2_project_point_to_pixel(color_pixel, &color_intrinsics, color_point);
-
-        if (color_pixel[1] < 0.f || color_pixel[1] > color_intrinsics.height ||
-          color_pixel[0] < 0.f || color_pixel[0] > color_intrinsics.width)
+        // Check for invalid measurements
+        if (!std::isfinite(depth))
         {
-          // For out of bounds color data, default to a shade of blue in order to visually
-          // distinguish holes. This color value is same as the librealsense out of bounds color
-          // value.
-          *iter_r = static_cast<uint8_t>(96);
-          *iter_g = static_cast<uint8_t>(157);
-          *iter_b = static_cast<uint8_t>(198);
-        } else {
-          auto i = static_cast<int>(color_pixel[0]);
-          auto j = static_cast<int>(color_pixel[1]);
-
-          auto offset = i * 3 + j * color_intrinsics.width * 3;
-          *iter_r = static_cast<uint8_t>(color_data[offset]);
-          *iter_g = static_cast<uint8_t>(color_data[offset + 1]);
-          *iter_b = static_cast<uint8_t>(color_data[offset + 2]);
+          *iter_x = *iter_y = *iter_z = bad_point;
         }
-
-        ++image_depth16;
-        ++iter_x; ++iter_y; ++iter_z;
-        ++iter_r; ++iter_g; ++iter_b;
+        else
+        {
+          // Fill in XYZ
+          *iter_x = (u - center_x) * depth * constant_x;
+          *iter_y = (v - center_y) * depth * constant_y;
+          *iter_z = depth * unit_scaling; 
+        }
+    
+      *iter_a = 255;
+      *iter_r = static_cast<uint8_t>((*it)[0]);
+      *iter_g = static_cast<uint8_t>((*it)[1]);
+      *iter_b = static_cast<uint8_t>((*it)[2]);
+      it++;
       }
     }
-    _pointcloud_publisher->publish(msg_pointcloud);
+    _pointcloud_publisher->publish(cloud_msg);
   }
 
   Extrinsics rsExtrinsicsToMsg(const rs2_extrinsics & extrinsics) const
@@ -1133,12 +1218,14 @@ private:
   double _camera_time_base;
   std::map<stream_index_pair, std::vector<rs2::stream_profile>> _enabled_profiles;
 
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr _pointcloud_publisher_align;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _pointcloud_publisher;
   rclcpp::Time _ros_time_base;
   bool _sync_frames;
   bool _pointcloud;
   rs2::asynchronous_syncer _syncer;
   rs2_extrinsics _depth2color_extrinsics;
+  image_geometry::PinholeCameraModel model_;
 };  // end class
 
 }  // namespace realsense_ros2_camera
