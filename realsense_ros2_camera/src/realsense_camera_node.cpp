@@ -340,6 +340,8 @@ private:
         "camera/depth/camera_info", 1);
 
       if (_pointcloud) {
+        _align_depth_publisher = this->create_publisher<sensor_msgs::msg::Image>(
+          "/camera/depth/color/aligned_depth_images", 1);
         _pointcloud_publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>(
           "/camera/depth/color/points", 1);
       }
@@ -466,6 +468,7 @@ private:
           }
           auto is_color_frame_arrived = false;
           auto is_depth_frame_arrived = false;
+          rs2::frame depth_frame;
           if (frame.is<rs2::frameset>()) {
             RCUTILS_LOG_DEBUG("Frameset arrived");
             auto frameset = frame.as<rs2::frameset>();
@@ -475,6 +478,7 @@ private:
               if (RS2_STREAM_COLOR == stream_type) {
                 is_color_frame_arrived = true;
               } else if (RS2_STREAM_DEPTH == stream_type) {
+                depth_frame = f;
                 is_depth_frame_arrived = true;
               }
 
@@ -495,6 +499,7 @@ private:
 
           if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
             RCUTILS_LOG_DEBUG("publishPCTopic(...)");
+            publishAlignedDepthImg(depth_frame, t);
             publishPCTopic(t);
           }
         };
@@ -875,6 +880,99 @@ private:
     // Publish Fisheye TF
   }
 
+  void alignFrame(const rs2_intrinsics& from_intrin,
+                                    const rs2_intrinsics& other_intrin,
+                                    rs2::frame from_image,
+                                    uint32_t output_image_bytes_per_pixel,
+                                    const rs2_extrinsics& from_to_other,
+                                    std::vector<uint8_t>& out_vec)
+  {
+      static const auto meter_to_mm = 0.001f;
+      uint8_t* p_out_frame = out_vec.data();
+
+      static const auto blank_color = 0x00;
+      memset(p_out_frame, blank_color, other_intrin.height * other_intrin.width * output_image_bytes_per_pixel);
+
+      auto p_from_frame = reinterpret_cast<const uint8_t*>(from_image.get_data());
+      auto from_stream_type = from_image.get_profile().stream_type();
+      float depth_units = ((from_stream_type == RS2_STREAM_DEPTH)?_depth_scale_meters:1.f);
+  #pragma omp parallel for schedule(dynamic)
+      for (int from_y = 0; from_y < from_intrin.height; ++from_y)
+      {
+          int from_pixel_index = from_y * from_intrin.width;
+          for (int from_x = 0; from_x < from_intrin.width; ++from_x, ++from_pixel_index)
+          {
+              // Skip over depth pixels with the value of zero
+              float depth = (from_stream_type == RS2_STREAM_DEPTH)?(depth_units * ((const uint16_t*)p_from_frame)[from_pixel_index]): 1.f;
+              if (depth)
+              {
+                  // Map the top-left corner of the depth pixel onto the other image
+                  float from_pixel[2] = { from_x - 0.5f, from_y - 0.5f }, from_point[3], other_point[3], other_pixel[2];
+                  rs2_deproject_pixel_to_point(from_point, &from_intrin, from_pixel, depth);
+                  rs2_transform_point_to_point(other_point, &from_to_other, from_point);
+                  rs2_project_point_to_pixel(other_pixel, &other_intrin, other_point);
+                  const int other_x0 = static_cast<int>(other_pixel[0] + 0.5f);
+                  const int other_y0 = static_cast<int>(other_pixel[1] + 0.5f);
+
+                  // Map the bottom-right corner of the depth pixel onto the other image
+                  from_pixel[0] = from_x + 0.5f; from_pixel[1] = from_y + 0.5f;
+                  rs2_deproject_pixel_to_point(from_point, &from_intrin, from_pixel, depth);
+                  rs2_transform_point_to_point(other_point, &from_to_other, from_point);
+                  rs2_project_point_to_pixel(other_pixel, &other_intrin, other_point);
+                  const int other_x1 = static_cast<int>(other_pixel[0] + 0.5f);
+                  const int other_y1 = static_cast<int>(other_pixel[1] + 0.5f);
+
+                  if (other_x0 < 0 || other_y0 < 0 || other_x1 >= other_intrin.width || other_y1 >= other_intrin.height)
+                      continue;
+
+                  for (int y = other_y0; y <= other_y1; ++y)
+                  {
+                      for (int x = other_x0; x <= other_x1; ++x)
+                      {
+                          int out_pixel_index = y * other_intrin.width + x;
+                          uint16_t* p_from_depth_frame = (uint16_t*)p_from_frame;
+                          uint16_t* p_out_depth_frame = (uint16_t*)p_out_frame;
+                          p_out_depth_frame[out_pixel_index] = p_from_depth_frame[from_pixel_index] * (  depth_units / meter_to_mm);
+                      }
+                  }
+              }
+          }
+      }
+  }
+  rs2_extrinsics getRsExtrinsics(const stream_index_pair& from_stream, const stream_index_pair& to_stream)
+  {
+      auto& from = _enabled_profiles[from_stream].front();
+      auto& to = _enabled_profiles[to_stream].front();
+      return from.get_extrinsics_to(to);
+  }
+  void publishAlignedDepthImg(rs2::frame depth_frame, const rclcpp::Time & t)
+  {
+    auto from_image_frame = depth_frame.as<rs2::video_frame>();
+    std::vector<uint8_t> out_vec;
+    out_vec.resize(_width[DEPTH] * _height[DEPTH] * _unit_step_size[DEPTH]);
+    auto ex = getRsExtrinsics(DEPTH, COLOR);
+    alignFrame(_stream_intrinsics[DEPTH], _stream_intrinsics[COLOR],
+                depth_frame, from_image_frame.get_bytes_per_pixel(),
+                ex, out_vec);
+    auto from_image = cv::Mat(_width[DEPTH], _height[DEPTH], _image_format[DEPTH], cv::Scalar(0, 0, 0));
+    from_image.data = out_vec.data();
+    RCUTILS_LOG_DEBUG("aligned done!");
+    sensor_msgs::msg::Image::SharedPtr img;
+    auto info_msg = _camera_info[DEPTH];
+    img = cv_bridge::CvImage(std_msgs::msg::Header(), sensor_msgs::image_encodings::TYPE_16UC1, from_image).toImageMsg();
+    auto image = depth_frame.as<rs2::video_frame>();
+    auto bpp = image.get_bytes_per_pixel();
+    auto height = image.get_height();
+    auto width = image.get_width();
+    img->width = width;
+    img->height = height;
+    img->is_bigendian = false;
+    img->step = width * bpp;
+    img->header.frame_id = "aligned_depth";
+    img->header.stamp = t;
+    _align_depth_publisher->publish(img);
+  }
+
   void publishPCTopic(const rclcpp::Time & t)
   {
     auto color_intrinsics = _stream_intrinsics[COLOR];
@@ -1133,6 +1231,7 @@ private:
   double _camera_time_base;
   std::map<stream_index_pair, std::vector<rs2::stream_profile>> _enabled_profiles;
 
+  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr _align_depth_publisher;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _pointcloud_publisher;
   rclcpp::Time _ros_time_base;
   bool _sync_frames;
