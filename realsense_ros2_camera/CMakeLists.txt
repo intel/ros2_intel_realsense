@@ -88,7 +88,7 @@ include_directories(
 )
 
 add_executable(${PROJECT_NAME}
-  include/${PROJECT_NAME}/constants.h
+  include/${PROJECT_NAME}/constants.hpp
   src/realsense_camera_node.cpp
 )
 

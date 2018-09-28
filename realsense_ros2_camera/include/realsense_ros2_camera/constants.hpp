@@ -15,8 +15,8 @@
 #include <string>
 
 #pragma once
-#ifndef REALSENSE_ROS2_CAMERA__CONSTANTS_H_
-#define REALSENSE_ROS2_CAMERA__CONSTANTS_H_
+#ifndef REALSENSE_ROS2_CAMERA__CONSTANTS_HPP_
+#define REALSENSE_ROS2_CAMERA__CONSTANTS_HPP_
 
 #define REALSENSE_ROS_MAJOR_VERSION    2
 #define REALSENSE_ROS_MINOR_VERSION    0
@@ -82,4 +82,4 @@ const char DEFAULT_ACCEL_OPTICAL_FRAME_ID[] = "camera_accel_optical_frame";
 const char DEFAULT_GYRO_OPTICAL_FRAME_ID[] = "camera_gyro_optical_frame";
 const char DEFAULT_IMU_OPTICAL_FRAME_ID[] = "camera_imu_optical_frame";
 }  // namespace realsense_ros2_camera
-#endif  // REALSENSE_ROS2_CAMERA__CONSTANTS_H_
+#endif  // REALSENSE_ROS2_CAMERA__CONSTANTS_HPP_

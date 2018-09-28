@@ -22,7 +22,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <realsense_ros2_camera/constants.h>
+#include <realsense_ros2_camera/constants.hpp>
 // cpplint: c++ system headers
 #include <chrono>
 #include <map>
