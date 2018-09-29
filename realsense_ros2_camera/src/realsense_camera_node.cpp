@@ -976,7 +976,7 @@ private:
     img->height = height;
     img->is_bigendian = false;
     img->step = width * bpp;
-    img->header.frame_id = "aligned_depth";
+    img->header.frame_id = _optical_frame_id[COLOR];
     img->header.stamp = t;
     _align_depth_publisher->publish(img);
   }
