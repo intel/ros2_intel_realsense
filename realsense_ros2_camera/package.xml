@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="3">
+<package format="2">
   <name>realsense_ros2_camera</name>
   <version>2.0.1</version>
   <description>The realsense_ros2_camera package</description>
