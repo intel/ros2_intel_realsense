@@ -174,6 +174,8 @@ private:
       _sync_frames = true;
     }
 
+    this->get_parameter_or("enable_aligned_depth", _align_depth, ALIGN_DEPTH);
+
     this->get_parameter("serial_no", _serial_no);
 
     this->get_parameter_or("depth_width", _width[DEPTH], DEPTH_WIDTH);
@@ -340,10 +342,14 @@ private:
         "camera/depth/camera_info", 1);
 
       if (_pointcloud) {
-        _align_depth_publisher = this->create_publisher<sensor_msgs::msg::Image>(
-          "/camera/depth/color/aligned_depth_images", 1);
         _pointcloud_publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-          "/camera/depth/color/points", 1);
+          "camera/depth/color/points", 1);
+      }
+      if (_align_depth) {
+        _align_depth_publisher = this->create_publisher<sensor_msgs::msg::Image>(
+          "camera/aligned_depth_images/image_raw", 1);
+        _align_depth_camera_publisher = this->create_publisher<sensor_msgs::msg::CameraInfo>(
+          "camera/aligned_depth_to_color/camera_info", 1);
       }
     }
 
@@ -496,10 +502,12 @@ private:
               frame.get_timestamp(), t.nanoseconds());
             publishFrame(frame, t);
           }
-
+          if (_align_depth && is_depth_frame_arrived && is_color_frame_arrived) {
+            RCUTILS_LOG_DEBUG("publishAlignedDepthTopic(...)");
+            publishAlignedDepthImg(depth_frame, t);
+          }
           if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
             RCUTILS_LOG_DEBUG("publishPCTopic(...)");
-            publishAlignedDepthImg(depth_frame, t);
             publishPCTopic(t);
           }
         };
@@ -979,6 +987,7 @@ private:
     img->header.frame_id = _optical_frame_id[COLOR];
     img->header.stamp = t;
     _align_depth_publisher->publish(img);
+    _align_depth_camera_publisher->publish(info_msg);
   }
 
   void publishPCTopic(const rclcpp::Time & t)
@@ -1240,10 +1249,13 @@ private:
   std::map<stream_index_pair, std::vector<rs2::stream_profile>> _enabled_profiles;
 
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr _align_depth_publisher;
+  rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr _align_depth_camera_publisher;
+
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _pointcloud_publisher;
   rclcpp::Time _ros_time_base;
   bool _sync_frames;
   bool _pointcloud;
+  bool _align_depth;
   rs2::asynchronous_syncer _syncer;
   rs2_extrinsics _depth2color_extrinsics;
 };  // end class
