@@ -18,8 +18,9 @@
 #include <console_bridge/console.h>
 #include <cv_bridge/cv_bridge.h>
 #include <rcl/time.h>
-#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/clock.hpp>
+#include <rclcpp/logger.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
@@ -72,7 +73,7 @@ const std::vector<std::vector<stream_index_pair>> HID_STREAMS = {{GYRO, ACCEL}};
 
 inline void signalHandler(int signum)
 {
-  RCUTILS_LOG_INFO("%s Signal is received! Terminate RealSense Node...", strsignal(signum));
+  std::cout << strsignal(signum) << "Signal is received! Terminate RealSense Node...\n";
   rclcpp::shutdown();
   exit(signum);
 }
@@ -88,8 +89,8 @@ public:
     _base_frame_id(""),
     _intialize_time_base(false)
   {
-    RCUTILS_LOG_INFO("RealSense ROS v%s", REALSENSE_ROS_VERSION_STR);
-    RCUTILS_LOG_INFO("Running with LibRealSense v%s", RS2_API_VERSION_STR);
+    RCLCPP_INFO(logger_, "RealSense ROS v%s", REALSENSE_ROS_VERSION_STR);
+    RCLCPP_INFO(logger_, "Running with LibRealSense v%s", RS2_API_VERSION_STR);
 
     signal(SIGINT, signalHandler);
     auto severity = rs2_log_severity::RS2_LOG_SEVERITY_ERROR;
@@ -160,13 +161,13 @@ public:
     setupStreams();
     rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
     publishStaticTransforms();
-    RCUTILS_LOG_INFO("RealSense Node Is Up!");
+    RCLCPP_INFO(logger_, "RealSense Node Is Up!");
   }
 
 private:
   void getParameters()
   {
-    RCUTILS_LOG_INFO("getParameters...");
+    RCLCPP_INFO(logger_, "getParameters...");
 
     this->get_parameter_or("enable_pointcloud", _pointcloud, POINTCLOUD);
     this->get_parameter_or("enable_sync", _sync_frames, SYNC_FRAMES);
@@ -243,14 +244,14 @@ private:
 
   void setupDevice()
   {
-    RCUTILS_LOG_INFO("setupDevice...");
+    RCLCPP_INFO(logger_, "setupDevice...");
     try {
       _ctx.reset(new rs2::context());
 
       auto list = _ctx->query_devices();
       if (0 == list.size()) {
         _ctx.reset();
-        RCUTILS_LOG_ERROR("No RealSense devices were found! Terminate RealSense Node...");
+        RCLCPP_ERROR(logger_, "No RealSense devices were found! Terminate RealSense Node...");
         rclcpp::shutdown();
         exit(1);
       }
@@ -261,29 +262,29 @@ private:
       _ctx->set_devices_changed_callback([this](rs2::event_information & info)
         {
           if (info.was_removed(_dev)) {
-            RCUTILS_LOG_FATAL("The device has been disconnected! Terminate RealSense Node...");
+            RCLCPP_FATAL(logger_, "The device has been disconnected! Terminate RealSense Node...");
             rclcpp::shutdown();
             exit(1);
           }
         });
 
       auto camera_name = _dev.get_info(RS2_CAMERA_INFO_NAME);
-      RCUTILS_LOG_INFO("Device Name: %s", camera_name);
+      RCLCPP_INFO(logger_, "Device Name: %s", camera_name);
 
       _serial_no = _dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
-      RCUTILS_LOG_INFO("Device Serial No: %s", _serial_no.c_str());
+      RCLCPP_INFO(logger_, "Device Serial No: %s", _serial_no.c_str());
 
       auto fw_ver = _dev.get_info(RS2_CAMERA_INFO_FIRMWARE_VERSION);
-      RCUTILS_LOG_INFO("Device FW version: %s", fw_ver);
+      RCLCPP_INFO(logger_, "Device FW version: %s", fw_ver);
 
       auto pid = _dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
-      RCUTILS_LOG_INFO("Device Product ID: %s", pid);
+      RCLCPP_INFO(logger_, "Device Product ID: %s", pid);
 
-      RCUTILS_LOG_INFO("Sync Mode: %s", ((_sync_frames) ? "On" : "Off"));
+      RCLCPP_INFO(logger_, "Sync Mode: %s", ((_sync_frames) ? "On" : "Off"));
 
       auto dev_sensors = _dev.query_sensors();
 
-      RCUTILS_LOG_INFO("Device Sensors: ");
+      RCLCPP_INFO(logger_, "Device Sensors: ");
       for (auto && elem : dev_sensors) {
         std::string module_name = elem.get_info(RS2_CAMERA_INFO_NAME);
         if ("Stereo Module" == module_name || "Coded-Light Depth Sensor" == module_name) {
@@ -300,13 +301,14 @@ private:
           _sensors[GYRO] = std::unique_ptr<rs2::sensor>(hid_sensor);
           _sensors[ACCEL] = std::unique_ptr<rs2::sensor>(hid_sensor);
         } else {
-          RCUTILS_LOG_ERROR(
+          RCLCPP_ERROR(logger_,
             "Module Name \"%s\" isn't supported by LibRealSense! Terminate RealSense Node...",
             module_name);
           rclcpp::shutdown();
           exit(1);
         }
-        RCUTILS_LOG_INFO("%s was found.", std::string(elem.get_info(RS2_CAMERA_INFO_NAME)).c_str());
+        RCLCPP_INFO(logger_, "%s was found.", std::string(elem.get_info(
+            RS2_CAMERA_INFO_NAME)).c_str());
       }
 
       // Update "enable" map
@@ -316,24 +318,24 @@ private:
         for (auto & stream_index : elem) {
           if (true == _enable[stream_index] && _sensors.find(stream_index) == _sensors.end()) {
             // check if device supports the enabled stream
-            RCUTILS_LOG_INFO("%s sensor isn't supported by current device! -- Skipping...",
+            RCLCPP_INFO(logger_, "%s sensor isn't supported by current device! -- Skipping...",
               rs2_stream_to_string(stream_index.first));
             _enable[stream_index] = false;
           }
         }
       }
     } catch (const std::exception & ex) {
-      RCUTILS_LOG_ERROR("An exception has been thrown: %s", ex.what());
+      RCLCPP_ERROR(logger_, "An exception has been thrown: %s", ex.what());
       throw;
     } catch (...) {
-      RCUTILS_LOG_ERROR("Unknown exception has occured!");
+      RCLCPP_ERROR(logger_, "Unknown exception has occured!");
       throw;
     }
   }
 
   void setupPublishers()
   {
-    RCUTILS_LOG_INFO("setupPublishers...");
+    RCLCPP_INFO(logger_, "setupPublishers...");
 
     if (true == _enable[DEPTH]) {
       _image_publishers[DEPTH] = this->create_publisher<sensor_msgs::msg::Image>(
@@ -347,7 +349,7 @@ private:
       }
       if (_align_depth) {
         _align_depth_publisher = this->create_publisher<sensor_msgs::msg::Image>(
-          "camera/aligned_depth_images/image_raw", 1);
+          "camera/aligned_depth_to_color/image_raw", 1);
         _align_depth_camera_publisher = this->create_publisher<sensor_msgs::msg::CameraInfo>(
           "camera/aligned_depth_to_color/camera_info", 1);
       }
@@ -410,7 +412,7 @@ private:
 
   void setupStreams()
   {
-    RCUTILS_LOG_INFO("setupStreams...");
+    RCLCPP_INFO(logger_, "setupStreams...");
     try {
       for (auto & streams : IMAGE_STREAMS) {
         for (auto & elem : streams) {
@@ -429,14 +431,14 @@ private:
 
                 _image[elem] =
                   cv::Mat(_width[elem], _height[elem], _image_format[elem], cv::Scalar(0, 0, 0));
-                RCUTILS_LOG_INFO("%s stream is enabled - width: %d, height: %d, fps: %d",
+                RCLCPP_INFO(logger_, "%s stream is enabled - width: %d, height: %d, fps: %d",
                   _stream_name[elem].c_str(), _width[elem], _height[elem], _fps[elem]);
                 break;
               }
             }
             if (_enabled_profiles.find(elem) == _enabled_profiles.end()) {
-              RCUTILS_LOG_WARN("Given stream configuration is not supported by the device!")
-              RCUTILS_LOG_WARN("Stream: %s, Format: %d, Width: %d, Height: %d, FPS: %d",
+              RCLCPP_WARN(logger_, "Given stream configuration is not supported by the device!")
+              RCLCPP_WARN(logger_, "Stream: %s, Format: %d, Width: %d, Height: %d, FPS: %d",
                 rs2_stream_to_string(elem.first), _format[elem], _width[elem], _height[elem],
                 _fps[elem]);
               _enable[elem] = false;
@@ -476,7 +478,7 @@ private:
           auto is_depth_frame_arrived = false;
           rs2::frame depth_frame;
           if (frame.is<rs2::frameset>()) {
-            RCUTILS_LOG_DEBUG("Frameset arrived");
+            RCLCPP_DEBUG(logger_, "Frameset arrived");
             auto frameset = frame.as<rs2::frameset>();
             for (auto it = frameset.begin(); it != frameset.end(); ++it) {
               auto f = (*it);
@@ -488,7 +490,7 @@ private:
                 is_depth_frame_arrived = true;
               }
 
-              RCUTILS_LOG_DEBUG(
+              RCLCPP_DEBUG(logger_,
                 "Frameset contain %s frame. frame_number: %llu ; frame_TS: %f ; ros_TS(NSec): %lu",
                 rs2_stream_to_string(stream_type), frame.get_frame_number(),
                 frame.get_timestamp(), t.nanoseconds());
@@ -496,18 +498,18 @@ private:
             }
           } else {
             auto stream_type = frame.get_profile().stream_type();
-            RCUTILS_LOG_DEBUG(
+            RCLCPP_DEBUG(logger_,
               "%s video frame arrived. frame_number: %llu ; frame_TS: %f ; ros_TS(NSec): %lu",
               rs2_stream_to_string(stream_type), frame.get_frame_number(),
               frame.get_timestamp(), t.nanoseconds());
             publishFrame(frame, t);
           }
           if (_align_depth && is_depth_frame_arrived && is_color_frame_arrived) {
-            RCUTILS_LOG_DEBUG("publishAlignedDepthTopic(...)");
+            RCLCPP_DEBUG(logger_, "publishAlignedDepthTopic(...)");
             publishAlignedDepthImg(depth_frame, t);
           }
           if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
-            RCUTILS_LOG_DEBUG("publishPCTopic(...)");
+            RCLCPP_DEBUG(logger_, "publishPCTopic(...)");
             publishPCTopic(t);
           }
         };
@@ -582,7 +584,7 @@ private:
               return;
             }
 
-            RCUTILS_LOG_DEBUG("Frame arrived: stream: %s ; index: %d ; Timestamp Domain: %s",
+            RCLCPP_DEBUG(logger_, "Frame arrived: stream: %s ; index: %d ; Timestamp Domain: %s",
             rs2_stream_to_string(frame.get_profile().stream_type()),
             frame.get_profile().stream_index(),
             rs2_timestamp_domain_to_string(frame.get_frame_timestamp_domain()));
@@ -615,20 +617,20 @@ private:
               _seq[stream_index] += 1;
               imu_msg.header.stamp = t;
               _imu_publishers[stream_index]->publish(imu_msg);
-              RCUTILS_LOG_DEBUG("Publish %s stream", rs2_stream_to_string(
+              RCLCPP_DEBUG(logger_, "Publish %s stream", rs2_stream_to_string(
                 frame.get_profile().stream_type()));
             }
           });
 
         if (true == _enable[GYRO]) {
-          RCUTILS_LOG_INFO("%s stream is enabled - fps: %d", _stream_name[GYRO].c_str(),
+          RCLCPP_INFO(logger_, "%s stream is enabled - fps: %d", _stream_name[GYRO].c_str(),
             _fps[GYRO]);
           auto gyroInfo = getImuInfo(GYRO);
           _imu_info_publisher[GYRO]->publish(gyroInfo);
         }
 
         if (true == _enable[ACCEL]) {
-          RCUTILS_LOG_INFO("%s stream is enabled - fps: %d",
+          RCLCPP_INFO(logger_, "%s stream is enabled - fps: %d",
             _stream_name[ACCEL].c_str(), _fps[ACCEL]);
           auto accelInfo = getImuInfo(ACCEL);
           _imu_info_publisher[ACCEL]->publish(accelInfo);
@@ -650,10 +652,10 @@ private:
         _fe_to_imu_publisher->publish(ex);
       }
     } catch (const std::exception & ex) {
-      RCUTILS_LOG_ERROR("An exception has been thrown: %s", ex.what());
+      RCLCPP_ERROR(logger_, "An exception has been thrown: %s", ex.what());
       throw;
     } catch (...) {
-      RCUTILS_LOG_ERROR("Unknown exception has occured!");
+      RCLCPP_ERROR(logger_, "Unknown exception has occured!");
       throw;
     }
   }
@@ -689,7 +691,7 @@ private:
 
     rs2::stream_profile depth_profile;
     if (!getEnabledProfile(DEPTH, depth_profile)) {
-      RCUTILS_LOG_ERROR("Depth profile not found!");
+      RCLCPP_ERROR(logger_, "Depth profile not found!");
       rclcpp::shutdown();
       exit(1);
     }
@@ -733,7 +735,7 @@ private:
 
   void publishStaticTransforms()
   {
-    RCUTILS_LOG_INFO("publishStaticTransforms...");
+    RCLCPP_INFO(logger_, "publishStaticTransforms...");
     // Publish transforms for the cameras
     tf2::Quaternion q_c2co;
     geometry_msgs::msg::TransformStamped b2c_msg;         // Base to Color
@@ -785,7 +787,7 @@ private:
 
     rs2::stream_profile depth_profile;
     if (!getEnabledProfile(DEPTH, depth_profile)) {
-      RCUTILS_LOG_ERROR("Depth profile not found!");
+      RCLCPP_ERROR(logger_, "Depth profile not found!");
       rclcpp::shutdown();
       exit(1);
     }
@@ -971,7 +973,7 @@ private:
     auto from_image =
       cv::Mat(_width[DEPTH], _height[DEPTH], _image_format[DEPTH], cv::Scalar(0, 0, 0));
     from_image.data = out_vec.data();
-    RCUTILS_LOG_DEBUG("aligned done!");
+    RCLCPP_DEBUG(logger_, "aligned done!");
     sensor_msgs::msg::Image::SharedPtr img;
     auto info_msg = _camera_info[DEPTH];
     img = cv_bridge::CvImage(
@@ -1154,7 +1156,7 @@ private:
 
   void publishFrame(rs2::frame f, const rclcpp::Time & t)
   {
-    RCUTILS_LOG_DEBUG("publishFrame(...)");
+    RCLCPP_DEBUG(logger_, "publishFrame(...)");
     stream_index_pair stream{f.get_profile().stream_type(), f.get_profile().stream_index()};
     auto & image = _image[stream];
     image.data = const_cast<uchar *>(reinterpret_cast<const uchar *>(f.get_data()));
@@ -1188,7 +1190,8 @@ private:
       info_publisher->publish(cam_info);
 
       image_publisher->publish(img);
-      RCUTILS_LOG_DEBUG("%s stream published", rs2_stream_to_string(f.get_profile().stream_type()));
+      RCLCPP_DEBUG(logger_, "%s stream published",
+        rs2_stream_to_string(f.get_profile().stream_type()));
     }
   }
 
@@ -1253,6 +1256,7 @@ private:
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _pointcloud_publisher;
   rclcpp::Time _ros_time_base;
+  rclcpp::Logger logger_ = rclcpp::get_logger("RealSenseCameraNode");
   bool _sync_frames;
   bool _pointcloud;
   bool _align_depth;

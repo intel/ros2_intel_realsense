@@ -92,7 +92,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Image
       Enabled: true
-      Image Topic: /camera/depth/image_rect_raw
+      Image Topic: /camera/aligned_depth_to_color/image_raw
       Max Value: 1
       Median window: 5
       Min Value: 0
