@@ -30,6 +30,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
+#include "image_transport/image_transport.h"
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
 #include <librealsense2/hpp/rs_processing.hpp>
@@ -46,6 +47,7 @@
 #include "realsense_ros2_camera/constants.hpp"
 #include "realsense_camera_msgs/msg/imu_info.hpp"
 #include "realsense_camera_msgs/msg/extrinsics.hpp"
+
 
 #define REALSENSE_ROS_EMBEDDED_VERSION_STR (VAR_ARG_STRING(VERSION: REALSENSE_ROS_MAJOR_VERSION. \
   REALSENSE_ROS_MINOR_VERSION.REALSENSE_ROS_PATCH_VERSION))
@@ -148,6 +150,7 @@ public:
     _encoding[ACCEL] = sensor_msgs::image_encodings::TYPE_8UC1;         // ROS message type
     _unit_step_size[ACCEL] = sizeof(uint8_t);         // sensor_msgs::ImagePtr row step size
     _stream_name[ACCEL] = "accel";
+
   }
 
   virtual ~RealSenseCameraNode()
@@ -337,8 +340,10 @@ private:
   {
     RCLCPP_INFO(logger_, "setupPublishers...");
 
+    rclcpp::Node::SharedPtr node_ = std::shared_ptr<rclcpp::Node>(this);
+    image_transport::ImageTransport image_transport(node_);
     if (true == _enable[DEPTH]) {
-      _image_publishers[DEPTH] = this->create_publisher<sensor_msgs::msg::Image>(
+      _image_publishers[DEPTH] = image_transport.advertise(
         "camera/depth/image_rect_raw", 1);
       _info_publisher[DEPTH] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/depth/camera_info", 1);
@@ -348,7 +353,7 @@ private:
           "camera/depth/color/points", 1);
       }
       if (_align_depth) {
-        _align_depth_publisher = this->create_publisher<sensor_msgs::msg::Image>(
+        _align_depth_publisher = image_transport.advertise(
           "camera/aligned_depth_to_color/image_raw", 1);
         _align_depth_camera_publisher = this->create_publisher<sensor_msgs::msg::CameraInfo>(
           "camera/aligned_depth_to_color/camera_info", 1);
@@ -356,21 +361,21 @@ private:
     }
 
     if (true == _enable[INFRA1]) {
-      _image_publishers[INFRA1] = this->create_publisher<sensor_msgs::msg::Image>(
+      _image_publishers[INFRA1] = image_transport.advertise(
         "camera/infra1/image_rect_raw", 1);
       _info_publisher[INFRA1] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/infra1/camera_info", 1);
     }
 
     if (true == _enable[INFRA2]) {
-      _image_publishers[INFRA2] = this->create_publisher<sensor_msgs::msg::Image>(
+      _image_publishers[INFRA2] = image_transport.advertise(
         "camera/infra2/image_rect_raw", 1);
       _info_publisher[INFRA2] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/infra2/camera_info", 1);
     }
 
     if (true == _enable[COLOR]) {
-      _image_publishers[COLOR] = this->create_publisher<sensor_msgs::msg::Image>(
+      _image_publishers[COLOR] = image_transport.advertise(
         "camera/color/image_raw", 1);
       _info_publisher[COLOR] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/color/camera_info", 1);
@@ -379,7 +384,7 @@ private:
     if (true == _enable[FISHEYE] &&
       true == _enable[DEPTH])
     {
-      _image_publishers[FISHEYE] = this->create_publisher<sensor_msgs::msg::Image>(
+      _image_publishers[FISHEYE] = image_transport.advertise(
         "camera/fisheye/image_raw", 1);
       _info_publisher[FISHEYE] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/fisheye/camera_info", 1);
@@ -988,7 +993,7 @@ private:
     img->step = width * bpp;
     img->header.frame_id = _optical_frame_id[COLOR];
     img->header.stamp = t;
-    _align_depth_publisher->publish(img);
+    _align_depth_publisher.publish(img);
     _align_depth_camera_publisher->publish(info_msg);
   }
 
@@ -1189,7 +1194,7 @@ private:
       cam_info.header.stamp = t;
       info_publisher->publish(cam_info);
 
-      image_publisher->publish(img);
+      image_publisher.publish(img);
       RCLCPP_DEBUG(logger_, "%s stream published",
         rs2_stream_to_string(f.get_profile().stream_type()));
     }
@@ -1228,7 +1233,7 @@ private:
   tf2_ros::StaticTransformBroadcaster _static_tf_broadcaster;
 
   std::map<stream_index_pair,
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> _image_publishers;
+    image_transport::Publisher> _image_publishers;
   std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> _imu_publishers;
   std::map<stream_index_pair, int> _image_format;
   std::map<stream_index_pair, rs2_format> _format;
@@ -1251,7 +1256,7 @@ private:
   double _camera_time_base;
   std::map<stream_index_pair, std::vector<rs2::stream_profile>> _enabled_profiles;
 
-  rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr _align_depth_publisher;
+  image_transport::Publisher _align_depth_publisher;
   rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr _align_depth_camera_publisher;
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _pointcloud_publisher;
