@@ -437,7 +437,7 @@ private:
               }
             }
             if (_enabled_profiles.find(elem) == _enabled_profiles.end()) {
-              RCLCPP_WARN(logger_, "Given stream configuration is not supported by the device!")
+              RCLCPP_WARN(logger_, "Given stream configuration is not supported by the device!");
               RCLCPP_WARN(logger_, "Stream: %s, Format: %d, Width: %d, Height: %d, FPS: %d",
                 rs2_stream_to_string(elem.first), _format[elem], _width[elem], _height[elem],
                 _fps[elem]);
