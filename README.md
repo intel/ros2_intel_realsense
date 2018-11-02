@@ -27,6 +27,22 @@ $ cd ~/ros2_ws
 $ ament build --build-tests --symlink-install --only cv_bridge 
 ```
 
+- #### Install [ros2 message_filter)](https://github.com/ros2/message_filters)
+```bash
+$ cd ~/ros2_ws/src
+$ git clone https://github.com/ros2/message_filters.git
+$ cd ~/ros2_ws
+$ ament build --build-tests --symlink-install --only message_filters
+
+- #### Install [ros2 image_transport(from image_common)](https://github.com/ros-perception/image_common/tree/ros2)
+```bash
+$ cd ~/ros2_ws/src
+$ git clone https://github.com/ros-perception/image_common.git
+$ git checkout ros2
+$ cd ~/ros2_ws
+$ ament build --build-tests --symlink-install --only image_transport
+```
+
 ### Step 3: Install Intel&reg; RealSense&trade; ROS2 from Sources
 - Goto an existing ros2 workspace, or [create one](https://github.com/ros2/ros2/wiki/Ament-Tutorial#create-directory-structure)
 ```bash
@@ -68,35 +84,19 @@ This will stream all camera sensors and publish on the appropriate ROS2 topics. 
 
 ### Visualize Depth Point Cloud
 
-To start the camera node in ROS2 and view the depth pointcloud in rviz via [ros1_bridge](https://github.com/ros2/ros1_bridge/blob/master/README.md):
+To start the camera node in ROS2 and view the depth pointcloud in rviz:
 ```bash
-# firstly self-build ros1_bridge, than refer to section "Example 1b: ROS 2 talker and ROS 1 listener"
-
-# in console #1 launch roscore
-$ source /opt/ros/kinetic/setup.bash
-$ roscore
-
-# in console #2 launch ros1_bridge
-$ source /opt/ros/kinetic/setup.bash
-$ cd ~/ros2_ws
-$ source ./install/local_setup.bash
-$ export ROS_MASTER_URI=http://localhost:11311
-$ ros2 run ros1_bridge dynamic_bridge
-
-# in console #3 launch rviz
-$ source /opt/ros/kinetic/setup.bash
-$ rosrun rviz rviz -d ~/ros2_ws/src/ros2_intel_realsense/realsense_ros2_camera/rviz/ros2.rviz
-
-# in console #4 launch realsense_ros2_camera
+# console #1 launch realsense_ros2_camera
 $ source ~/ros2_ws/install/local_setup.bash
 $ realsense_ros2_camera
+
+# console #2 launch rviz2
+$ source ~/ros2_ws/install/local_setup.bash
+$ ros2 run rviz2 rviz2
+# add image and pointcloud2 and select topic in rviz.
 ```
 
 This will launch [RViz](http://wiki.ros.org/rviz) and display the five streams: color, depth, infra1, infra2, pointcloud.
-
-NOTE: in case PointCloud2 stream is not observed, try stop the "realsense_ros2_camera" and re-launch this node from console #4. This's a known issue and workaround is made (right fixing in ros1_bridge, details discussed in [ROS discourse](https://discourse.ros.org/t/ros1-bridge-failed-to-pass-tf-static-message-when-subscribed-from-rviz/3863)).
-
-NOTE: visulization in ROS2 pending on [rviz2](https://github.com/ros2/rviz).
 
 ![realsense_ros2_camera visualization results](https://github.com/intel/ros2_intel_realsense/raw/master/realsense_ros2_camera/rviz/ros2_rviz.png "realsense_ros2_camera visualization results")
 

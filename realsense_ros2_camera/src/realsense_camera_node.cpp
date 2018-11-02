@@ -17,6 +17,7 @@
 #include <builtin_interfaces/msg/time.hpp>
 #include <console_bridge/console.h>
 #include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 #include <rcl/time.h>
 #include <rclcpp/clock.hpp>
 #include <rclcpp/logger.hpp>
@@ -30,7 +31,6 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
-#include "image_transport/image_transport.h"
 #include <librealsense2/rs.hpp>
 #include <librealsense2/rsutil.h>
 #include <librealsense2/hpp/rs_processing.hpp>
@@ -1232,8 +1232,7 @@ private:
   std::map<stream_index_pair, std::string> _stream_name;
   tf2_ros::StaticTransformBroadcaster _static_tf_broadcaster;
 
-  std::map<stream_index_pair,
-    image_transport::Publisher> _image_publishers;
+  std::map<stream_index_pair, image_transport::Publisher> _image_publishers;
   std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> _imu_publishers;
   std::map<stream_index_pair, int> _image_format;
   std::map<stream_index_pair, rs2_format> _format;
