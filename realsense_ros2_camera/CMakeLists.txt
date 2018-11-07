@@ -75,6 +75,7 @@ find_package(tf2 REQUIRED)
 find_package(realsense_camera_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(image_transport REQUIRED)
 
 include_directories(
   include
@@ -113,6 +114,7 @@ ament_target_dependencies(${PROJECT_NAME}
   realsense_camera_msgs
   cv_bridge
   OpenCV
+  image_transport
 )
 
 # Install binaries
