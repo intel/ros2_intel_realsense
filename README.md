@@ -3,17 +3,14 @@ These are packages for using Intel RealSense cameras (D400 series) with ROS2.
 
 ## Installation Instructions
 
-The following instructions were verified with ROS2 Ardent on **Ubutnu 16.04**.
+The following instructions were verified with ROS2 Bouncy on **Ubutnu 18.04**.
 
-### Step 1: Install the Intel&reg; RealSense&trade; SDK 2.0
-Install tag v2.9.1 [Intel&reg; RealSense&trade; SDK 2.0](https://github.com/IntelRealSense/librealsense/tree/v2.9.1) and follow the instructions under [Linux Installation](https://github.com/IntelRealSense/librealsense/blob/v2.9.1/doc/installation.md).
-
-### Step 2: Install the ROS2 dependents
-- #### Install [ROS2 Ardent Apalone](https://github.com/ros2/ros2/wiki/Release-Ardent-Apalone) from binary or source.
+### Step 1: Install the ROS2 dependenices
+- #### Install [ROS2 Bouncy Bolson](https://index.ros.org/doc/ros2/Release-Bouncy-Bolson/) from binary or source.
 - #### Source the environment
 ```bash
 # from binary install
-$ source /opt/ros/ardent/setup.bash
+$ source /opt/ros/bouncy/setup.bash
 # from source install
 $ cd ~/ros2_ws
 $ source install/local_setup.bash
@@ -24,15 +21,16 @@ $ cd ~/ros2_ws/src
 $ git clone https://github.com/ros-perception/vision_opencv.git
 $ git checkout ros2
 $ cd ~/ros2_ws
-$ ament build --build-tests --symlink-install --only cv_bridge 
+$ colcon build --base-paths src/vision_opencv/cv_bridge
 ```
 
-- #### Install [ros2 message_filter)](https://github.com/ros2/message_filters)
+- #### Install [ros2 message_filter](https://github.com/ros2/message_filters)
 ```bash
 $ cd ~/ros2_ws/src
 $ git clone https://github.com/ros2/message_filters.git
 $ cd ~/ros2_ws
-$ ament build --build-tests --symlink-install --only message_filters
+$ colcon build --base-paths src/message_filters
+```
 
 - #### Install [ros2 image_transport(from image_common)](https://github.com/ros-perception/image_common/tree/ros2)
 ```bash
@@ -40,7 +38,20 @@ $ cd ~/ros2_ws/src
 $ git clone https://github.com/ros-perception/image_common.git
 $ git checkout ros2
 $ cd ~/ros2_ws
-$ ament build --build-tests --symlink-install --only image_transport
+$ colcon build --base-paths src/image_common/image_transport
+```
+
+### Step 2: Install the Intel&reg; RealSense&trade; SDK 2.0
+- #### Install [Intel&reg; RealSense&trade; SDK 2.0](https://github.com/IntelRealSense/librealsense/tree/v2.9.1) from binary
+Follow the instructions under [Linux Installation](https://github.com/IntelRealSense/librealsense/blob/v2.16.5/doc/distribution_linux.md).
+
+- #### Install from source
+```bash
+$ cd ~/ros2_ws/src
+$ git clone https://github.com/IntelRealSense/librealsense.git
+$ git checkout ros2debian
+$ cd ~/ros2_ws
+$ colcon build --base-paths src/librealsense
 ```
 
 ### Step 3: Install Intel&reg; RealSense&trade; ROS2 from Sources
@@ -49,11 +60,12 @@ $ ament build --build-tests --symlink-install --only image_transport
 $ mkdir -p ~/ros2_ws/src
 $ cd ~/ros2_ws/src
 ```
-- Clone the latest Intel&reg; RealSense&trade; ROS2 from [here](https://github.com/intel/ros2_intel_realsense) into 'ros2_ws/src/'
+- Clone the latest ros2_intel_realsense package into 'ros2_ws/src/'
 
 ```bash
-$ cd ..
-$ ament build --build-tests --symlink-install --only realsense_camera_msgs realsense_ros2_camera
+$ cd ~/ros2_ws/src
+$ git clone https://github.com/intel/ros2_intel_realsense.git
+$ colcon build --base-paths src/ros2_intel_realsense
 $ source ./install/local_setup.bash
 ```
 
@@ -102,16 +114,15 @@ This will launch [RViz](http://wiki.ros.org/rviz) and display the five streams: 
 
 ### Run tests
 ```Shell
-$ ament test --only-packages realsense_ros2_camera
+$ colcon test --base-paths src/ros2_intel_realsense
 ```
 
 ## Known Issues
 * This ROS2 node does not currently provide any dynamic reconfigure support for camera properties/presets.
-* We support Ubuntu Linux Xenial Xerus 16.04 on 64-bit, but not support Mac OS X 10.12 (Sierra) and Windows 10 yet.
+* We support Ubuntu Linux Bionic Beaver 18.04 on 64-bit, but not support Mac OS X 10.12 (Sierra) and Windows 10 yet.
 
 ## Todo
-A few features to be ported from the latest realsense_ros_camera v2.0.2
-* RGB-D point cloud (depth_registered)
+A few features to be ported from the latest ROS [realsense](https://github.com/intel-ros/realsense.git)
 * Preset/Controls
 
 ## License
