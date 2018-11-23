@@ -80,6 +80,15 @@ inline void signalHandler(int signum)
   exit(signum);
 }
 
+class PipelineSyncer : public rs2::asynchronous_syncer
+{
+public:
+  void operator()(rs2::frame f) const
+  {
+    invoke(std::move(f));
+  }
+};
+
 class RealSenseCameraNode : public rclcpp::Node
 {
 public:
@@ -150,7 +159,6 @@ public:
     _encoding[ACCEL] = sensor_msgs::image_encodings::TYPE_8UC1;         // ROS message type
     _unit_step_size[ACCEL] = sizeof(uint8_t);         // sensor_msgs::ImagePtr row step size
     _stream_name[ACCEL] = "accel";
-
   }
 
   virtual ~RealSenseCameraNode()
@@ -1264,10 +1272,9 @@ private:
   bool _sync_frames;
   bool _pointcloud;
   bool _align_depth;
-  rs2::asynchronous_syncer _syncer;
+  PipelineSyncer _syncer;
   rs2_extrinsics _depth2color_extrinsics;
 };  // end class
-
 }  // namespace realsense_ros2_camera
 
 int main(int argc, char * argv[])
