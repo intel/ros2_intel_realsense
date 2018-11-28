@@ -348,11 +348,9 @@ private:
   {
     RCLCPP_INFO(logger_, "setupPublishers...");
 
-    rclcpp::Node::SharedPtr node_ = std::shared_ptr<rclcpp::Node>(this);
-    image_transport::ImageTransport image_transport(node_);
     if (true == _enable[DEPTH]) {
-      _image_publishers[DEPTH] = image_transport.advertise(
-        "camera/depth/image_rect_raw", 1);
+      _image_publishers[DEPTH] = image_transport::create_publisher(
+        this, "camera/depth/image_rect_raw");
       _info_publisher[DEPTH] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/depth/camera_info", 1);
 
@@ -361,30 +359,30 @@ private:
           "camera/depth/color/points", 1);
       }
       if (_align_depth) {
-        _align_depth_publisher = image_transport.advertise(
-          "camera/aligned_depth_to_color/image_raw", 1);
+        _align_depth_publisher = image_transport::create_publisher(
+          this, "camera/aligned_depth_to_color/image_raw");
         _align_depth_camera_publisher = this->create_publisher<sensor_msgs::msg::CameraInfo>(
           "camera/aligned_depth_to_color/camera_info", 1);
       }
     }
 
     if (true == _enable[INFRA1]) {
-      _image_publishers[INFRA1] = image_transport.advertise(
-        "camera/infra1/image_rect_raw", 1);
+      _image_publishers[INFRA1] = image_transport::create_publisher(
+        this, "camera/infra1/image_rect_raw");
       _info_publisher[INFRA1] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/infra1/camera_info", 1);
     }
 
     if (true == _enable[INFRA2]) {
-      _image_publishers[INFRA2] = image_transport.advertise(
-        "camera/infra2/image_rect_raw", 1);
+      _image_publishers[INFRA2] = image_transport::create_publisher(
+        this, "camera/infra2/image_rect_raw");
       _info_publisher[INFRA2] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/infra2/camera_info", 1);
     }
 
     if (true == _enable[COLOR]) {
-      _image_publishers[COLOR] = image_transport.advertise(
-        "camera/color/image_raw", 1);
+      _image_publishers[COLOR] = image_transport::create_publisher(
+        this, "camera/color/image_raw");
       _info_publisher[COLOR] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/color/camera_info", 1);
     }
@@ -392,8 +390,8 @@ private:
     if (true == _enable[FISHEYE] &&
       true == _enable[DEPTH])
     {
-      _image_publishers[FISHEYE] = image_transport.advertise(
-        "camera/fisheye/image_raw", 1);
+      _image_publishers[FISHEYE] = image_transport::create_publisher(
+        this, "camera/fisheye/image_raw");
       _info_publisher[FISHEYE] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/fisheye/camera_info", 1);
       _fe_to_depth_publisher = this->create_publisher<realsense_camera_msgs::msg::Extrinsics>(
