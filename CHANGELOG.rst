@@ -2,6 +2,11 @@
 Changelog for ros2_intel_realsense
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.3 (2018-12-11)
+------------------
+* fix build dependence for ros2 crystal release
+* Add eigen as a build dependency.
+
 2.0.2 (2018-12-07)
 ------------------
 * create for bloom release
