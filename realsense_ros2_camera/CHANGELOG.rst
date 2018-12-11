@@ -2,6 +2,13 @@
 Changelog for package realsense_ros2_camera
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#18 <https://github.com/intel/ros2_intel_realsense/issues/18>`_ from nuclearsandwich/add-dependencies-to-package.xml
+  Add eigen as a build dependency for ros2debian
+* Add eigen as a build dependency.
+* Contributors: Chris Ye, Steven! Ragnarök
+
 2.0.2 (2018-12-07)
 ------------------
 * Merge pull request `#15 <https://github.com/intel/ros2_intel_realsense/issues/15>`_ from intel/pointer_api
