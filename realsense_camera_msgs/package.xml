@@ -5,6 +5,7 @@
   <version>2.0.3</version>
   <description>A package containing realsense camera messages definitions.</description>
   <maintainer email="sharron.liu@intel.com">Sharron LIU</maintainer>
+  <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
