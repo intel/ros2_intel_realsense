@@ -3,70 +3,64 @@ These are packages for using Intel RealSense cameras (D400 series) with ROS2.
 
 ## Installation Instructions
 
-The following instructions were verified with ROS2 Bouncy on **Ubutnu 18.04**.
+The following instructions were verified with ROS2 crystal on **Ubutnu 18.04**.
 
-### Step 1: Install the ROS2 dependenices
-- #### Install [ROS2 Bouncy Bolson](https://index.ros.org/doc/ros2/Release-Bouncy-Bolson/) from binary or source.
-- #### Source the environment
-```bash
-# from binary install
-$ source /opt/ros/bouncy/setup.bash
-# from source install
-$ cd ~/ros2_ws
-$ source install/local_setup.bash
-```
-- #### Install [ros2 cv_bridge](https://github.com/ros-perception/vision_opencv/tree/ros2)
-```bash
-$ cd ~/ros2_ws/src
-$ git clone https://github.com/ros-perception/vision_opencv.git
-$ git checkout ros2
-$ cd ~/ros2_ws
-$ colcon build --base-paths src/vision_opencv/cv_bridge
-```
+### Dependencies
+#### Install ROS2 packages [ros-crystal-desktop](https://index.ros.org/doc/ros2/Installation/Linux-Install-Debians/)
+  ```bash
+  sudo apt-get install ros-crystal-desktop
+  ```
+  The ros-crystal-desktop will include below packages.
+  * ament_cmake
+  * std_msgs
+  * sensor_msgs
+  * builtin_interfaces
+  * eigen
+  * rmw_implementation
+  * rclcpp
+  * tf2_ros
+  * rosidl_default_generators
+  * rosidl_default_runtime
 
-- #### Install [ros2 message_filter](https://github.com/ros2/message_filters)
-```bash
-$ cd ~/ros2_ws/src
-$ git clone https://github.com/ros2/message_filters.git
-$ cd ~/ros2_ws
-$ colcon build --base-paths src/message_filters
-```
+#### Install ROS2 dependences
+  ```bash
+  sudo apt-get install ros-crystal-cv-bridge ros-crystal-librealsense2 ros-crystal-message-filters ros-crystal-image-transport
+  ```
+  * [cv_bridge](https://github.com/ros-perception/vision_opencv/tree/ros2/cv_bridge)
+  * [Intel® RealSense™ SDK 2.0](https://github.com/IntelRealSense/librealsense.git)
+  * [ros2_message_filters](https://github.com/ros2/message_filters)
+  * [ros2 image_transport](https://github.com/ros-perception/image_common/tree/ros2)
+  
+#### Install Other non-ROS debian packages
+  ```
+  sudo apt-get install -y libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev
+  sudo apt-get install -y libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev
+  ```
+  * libssl-dev
+  * libusb-1.0-0-dev
+  * pkg-config
+  * libgtk-3-dev
+  * libglfw3-dev
+  * libgl1-mesa-dev
+  * libglu1-mesa-dev
 
-- #### Install [ros2 image_transport(from image_common)](https://github.com/ros-perception/image_common/tree/ros2)
-```bash
-$ cd ~/ros2_ws/src
-$ git clone https://github.com/ros-perception/image_common.git
-$ git checkout ros2
-$ cd ~/ros2_ws
-$ colcon build --base-paths src/image_common/image_transport
-```
+### Install ros2_intel_realsense binary packages
+  ```
+  sudo apt-get install ros-crystal-realsense-camera-msgs ros-crystal-realsense-ros2-camera
+  ```
+  The ros2_intel_realsense packages installation have been completed. You could jump to [Usage Instructions](https://github.com/intel/ros2_intel_realsense#usage-instructions) for executing, you could also install ros2_intel_realsense from source for more features. 
 
-### Step 2: Install the Intel&reg; RealSense&trade; SDK 2.0
-- #### Install [Intel&reg; RealSense&trade; SDK 2.0](https://github.com/IntelRealSense/librealsense/tree/v2.9.1) from binary
-Follow the instructions under [Linux Installation](https://github.com/IntelRealSense/librealsense/blob/v2.16.5/doc/distribution_linux.md).
-
-- #### Install from source
+### Install ros2_intel_realsense from source
 ```bash
-$ cd ~/ros2_ws/src
-$ git clone https://github.com/IntelRealSense/librealsense.git
-$ git checkout ros2debian
-$ cd ~/ros2_ws
-$ colcon build --base-paths src/librealsense
-```
+#get code
+mkdir -p ~/ros2_ws/src
+cd ~/ros2_ws/src
+git clone https://github.com/intel/ros2_intel_realsense.git
 
-### Step 3: Install Intel&reg; RealSense&trade; ROS2 from Sources
-- Goto an existing ros2 workspace, or [create one](https://github.com/ros2/ros2/wiki/Ament-Tutorial#create-directory-structure)
-```bash
-$ mkdir -p ~/ros2_ws/src
-$ cd ~/ros2_ws/src
-```
-- Clone the latest ros2_intel_realsense package into 'ros2_ws/src/'
-
-```bash
-$ cd ~/ros2_ws/src
-$ git clone https://github.com/intel/ros2_intel_realsense.git
-$ colcon build --base-paths src/ros2_intel_realsense
-$ source ./install/local_setup.bash
+#build
+cd ~/ros2_ws
+source /opt/ros/crystal/setup.bash
+colcon build --base-paths src/ros2_intel_realsense
 ```
 
 ## Usage Instructions
@@ -75,10 +69,12 @@ $ source ./install/local_setup.bash
 To start the camera node in ROS2, plug in the camera, then type the following command:
 
 ```bash
+source /opt/ros/crystal/setup.bash
+source ~/ros2_ws/install/local_setup.bash
 # To launch with "ros2 run"
-$ ros2 run realsense_ros2_camera realsense_ros2_camera
+ros2 run realsense_ros2_camera realsense_ros2_camera
 # OR, to invoke the executable directly
-$ realsense_ros2_camera
+realsense_ros2_camera
 ```
 
 This will stream all camera sensors and publish on the appropriate ROS2 topics. PointCloud2 is enabled by default, till we provide ROS2 python launch options.
@@ -99,13 +95,9 @@ This will stream all camera sensors and publish on the appropriate ROS2 topics. 
 To start the camera node in ROS2 and view the depth pointcloud in rviz:
 ```bash
 # console #1 launch realsense_ros2_camera
-$ source ~/ros2_ws/install/local_setup.bash
-$ realsense_ros2_camera
-
-# console #2 launch rviz2
-$ source ~/ros2_ws/install/local_setup.bash
-$ ros2 run rviz2 rviz2
-# add image and pointcloud2 and select topic in rviz.
+source /opt/ros/crystal/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+ros2 launch realsense_ros2_camera ros2_intel_realsense.launch.py
 ```
 
 This will launch [RViz](http://wiki.ros.org/rviz) and display the five streams: color, depth, infra1, infra2, pointcloud.
@@ -114,7 +106,7 @@ This will launch [RViz](http://wiki.ros.org/rviz) and display the five streams: 
 
 ### Run tests
 ```Shell
-$ colcon test --base-paths src/ros2_intel_realsense
+colcon test --base-paths src/ros2_intel_realsense
 ```
 
 ## Known Issues
@@ -143,3 +135,4 @@ limitations under the License.
 **Other names and brands may be claimed as the property of others*
 
 Any security issue should be reported using process at https://01.org/security
+
