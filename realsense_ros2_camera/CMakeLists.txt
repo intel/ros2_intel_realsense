@@ -144,7 +144,10 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
-  ament_add_gtest(test_api test/test_api.cpp)
+  set(REALSENSE_DEVICE_PLUGIN FALSE)
+  if(${REALSENSE_DEVICE_PLUGIN})
+    ament_add_gtest(test_api test/test_api.cpp)
+  endif()
   if(TARGET test_api)
     target_include_directories(test_api PUBLIC
       ${${PROJECT_NAME}_INCLUDE_DIRS}
