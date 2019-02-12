@@ -181,12 +181,12 @@ private:
 
     this->get_parameter_or("enable_pointcloud", _pointcloud, POINTCLOUD);
     this->get_parameter_or("enable_sync", _sync_frames, SYNC_FRAMES);
-    if (_pointcloud) {
-      _sync_frames = true;
-    }
 
     this->get_parameter_or("enable_aligned_depth", _align_depth, ALIGN_DEPTH);
 
+    if (_pointcloud || _align_depth) {
+      _sync_frames = true;
+    }
     this->get_parameter("serial_no", _serial_no);
 
     this->get_parameter_or("depth_width", _width[DEPTH], DEPTH_WIDTH);
