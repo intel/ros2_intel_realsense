@@ -180,19 +180,23 @@ private:
     RCLCPP_INFO(logger_, "getParameters...");
 
     this->get_parameter_or("enable_pointcloud", _pointcloud, POINTCLOUD);
-    this->get_parameter_or("enable_sync", _sync_frames, SYNC_FRAMES);
-    if (_pointcloud) {
+    // this->get_parameter_or("enable_sync", _sync_frames, SYNC_FRAMES);
+    this->get_parameter_or("enable_depth", _enable[DEPTH], ENABLE_DEPTH);
+    this->get_parameter_or("enable_aligned_depth", _align_depth, ALIGN_DEPTH);
+    if (!_enable[DEPTH]) {
+      _pointcloud = false;
+      _align_depth = false;
+    }
+    if (_pointcloud || _align_depth) {
       _sync_frames = true;
     }
-
-    this->get_parameter_or("enable_aligned_depth", _align_depth, ALIGN_DEPTH);
-
+    else
+      _sync_frames = false;
     this->get_parameter("serial_no", _serial_no);
 
     this->get_parameter_or("depth_width", _width[DEPTH], DEPTH_WIDTH);
     this->get_parameter_or("depth_height", _height[DEPTH], DEPTH_HEIGHT);
     this->get_parameter_or("depth_fps", _fps[DEPTH], DEPTH_FPS);
-    this->get_parameter_or("enable_depth", _enable[DEPTH], ENABLE_DEPTH);
 
     this->get_parameter_or("infra1_width", _width[INFRA1], INFRA1_WIDTH);
     this->get_parameter_or("infra1_height", _height[INFRA1], INFRA1_HEIGHT);
@@ -699,15 +703,15 @@ private:
     _camera_info[stream_index].p.at(10) = 1;
     _camera_info[stream_index].p.at(11) = 0;
 
-    rs2::stream_profile depth_profile;
-    if (!getEnabledProfile(DEPTH, depth_profile)) {
-      RCLCPP_ERROR(logger_, "Depth profile not found!");
-      rclcpp::shutdown();
-      exit(1);
-    }
 
     // Why Depth to Color?
     if (stream_index == DEPTH && _enable[DEPTH] && _enable[COLOR]) {
+      rs2::stream_profile depth_profile;
+      if (!getEnabledProfile(DEPTH, depth_profile)) {
+        RCLCPP_ERROR(logger_, "Depth profile not found!");
+        rclcpp::shutdown();
+        exit(1);
+      }
       _depth2color_extrinsics = depth_profile.get_extrinsics_to(_enabled_profiles[COLOR].front());
       // set depth to color translation values in Projection matrix (P)
       _camera_info[stream_index].p.at(3) = _depth2color_extrinsics.translation[0];             // Tx
@@ -795,12 +799,6 @@ private:
     d2do_msg.transform.rotation.w = q_d2do.getW();
     _static_tf_broadcaster.sendTransform(d2do_msg);
 
-    rs2::stream_profile depth_profile;
-    if (!getEnabledProfile(DEPTH, depth_profile)) {
-      RCLCPP_ERROR(logger_, "Depth profile not found!");
-      rclcpp::shutdown();
-      exit(1);
-    }
 
     if (true == _enable[COLOR]) {
       // Transform base frame to color frame
@@ -832,70 +830,79 @@ private:
       c2co_msg.transform.rotation.w = q_c2co.getW();
       _static_tf_broadcaster.sendTransform(c2co_msg);
     }
+    
+    if (_enable[DEPTH]) {
 
-    if (true == _enable[INFRA1]) {
-      auto d2ir1_extrinsics = depth_profile.get_extrinsics_to(_enabled_profiles[INFRA1].front());
-      auto q = rotationMatrixToQuaternion(d2ir1_extrinsics.rotation);
+      rs2::stream_profile depth_profile;
+      if (!getEnabledProfile(DEPTH, depth_profile)) {
+        RCLCPP_ERROR(logger_, "Depth profile not found!");
+        rclcpp::shutdown();
+        exit(1);
+      }
+      if (true == _enable[INFRA1]) {
+        auto d2ir1_extrinsics = depth_profile.get_extrinsics_to(_enabled_profiles[INFRA1].front());
+        auto q = rotationMatrixToQuaternion(d2ir1_extrinsics.rotation);
 
-      // Transform base frame to infra1
-      b2ir1_msg.header.stamp = transform_ts_;
-      b2ir1_msg.header.frame_id = _base_frame_id;
-      b2ir1_msg.child_frame_id = _frame_id[INFRA1];
-      b2ir1_msg.transform.translation.x = d2ir1_extrinsics.translation[2];
-      b2ir1_msg.transform.translation.y = -d2ir1_extrinsics.translation[0];
-      b2ir1_msg.transform.translation.z = -d2ir1_extrinsics.translation[1];
+        // Transform base frame to infra1
+        b2ir1_msg.header.stamp = transform_ts_;
+        b2ir1_msg.header.frame_id = _base_frame_id;
+        b2ir1_msg.child_frame_id = _frame_id[INFRA1];
+        b2ir1_msg.transform.translation.x = d2ir1_extrinsics.translation[2];
+        b2ir1_msg.transform.translation.y = -d2ir1_extrinsics.translation[0];
+        b2ir1_msg.transform.translation.z = -d2ir1_extrinsics.translation[1];
 
-      b2ir1_msg.transform.rotation.x = q.x();
-      b2ir1_msg.transform.rotation.y = q.y();
-      b2ir1_msg.transform.rotation.z = q.z();
-      b2ir1_msg.transform.rotation.w = q.w();
-      _static_tf_broadcaster.sendTransform(b2ir1_msg);
+        b2ir1_msg.transform.rotation.x = q.x();
+        b2ir1_msg.transform.rotation.y = q.y();
+        b2ir1_msg.transform.rotation.z = q.z();
+        b2ir1_msg.transform.rotation.w = q.w();
+        _static_tf_broadcaster.sendTransform(b2ir1_msg);
 
-      // Transform infra1 frame to infra1 optical frame
-      ir1_2_ir1o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
-      ir1_2_ir1o_msg.header.stamp = transform_ts_;
-      ir1_2_ir1o_msg.header.frame_id = _frame_id[INFRA1];
-      ir1_2_ir1o_msg.child_frame_id = _optical_frame_id[INFRA1];
-      ir1_2_ir1o_msg.transform.translation.x = 0;
-      ir1_2_ir1o_msg.transform.translation.y = 0;
-      ir1_2_ir1o_msg.transform.translation.z = 0;
-      ir1_2_ir1o_msg.transform.rotation.x = ir1_2_ir1o.getX();
-      ir1_2_ir1o_msg.transform.rotation.y = ir1_2_ir1o.getY();
-      ir1_2_ir1o_msg.transform.rotation.z = ir1_2_ir1o.getZ();
-      ir1_2_ir1o_msg.transform.rotation.w = ir1_2_ir1o.getW();
-      _static_tf_broadcaster.sendTransform(ir1_2_ir1o_msg);
-    }
+        // Transform infra1 frame to infra1 optical frame
+        ir1_2_ir1o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
+        ir1_2_ir1o_msg.header.stamp = transform_ts_;
+        ir1_2_ir1o_msg.header.frame_id = _frame_id[INFRA1];
+        ir1_2_ir1o_msg.child_frame_id = _optical_frame_id[INFRA1];
+        ir1_2_ir1o_msg.transform.translation.x = 0;
+        ir1_2_ir1o_msg.transform.translation.y = 0;
+        ir1_2_ir1o_msg.transform.translation.z = 0;
+        ir1_2_ir1o_msg.transform.rotation.x = ir1_2_ir1o.getX();
+        ir1_2_ir1o_msg.transform.rotation.y = ir1_2_ir1o.getY();
+        ir1_2_ir1o_msg.transform.rotation.z = ir1_2_ir1o.getZ();
+        ir1_2_ir1o_msg.transform.rotation.w = ir1_2_ir1o.getW();
+        _static_tf_broadcaster.sendTransform(ir1_2_ir1o_msg);
+      }
 
-    if (true == _enable[INFRA2]) {
-      auto d2ir2_extrinsics = depth_profile.get_extrinsics_to(_enabled_profiles[INFRA2].front());
-      auto q = rotationMatrixToQuaternion(d2ir2_extrinsics.rotation);
+      if (true == _enable[INFRA2]) {
+        auto d2ir2_extrinsics = depth_profile.get_extrinsics_to(_enabled_profiles[INFRA2].front());
+        auto q = rotationMatrixToQuaternion(d2ir2_extrinsics.rotation);
 
-      // Transform base frame to infra2
-      b2ir2_msg.header.stamp = transform_ts_;
-      b2ir2_msg.header.frame_id = _base_frame_id;
-      b2ir2_msg.child_frame_id = _frame_id[INFRA2];
-      b2ir2_msg.transform.translation.x = d2ir2_extrinsics.translation[2];
-      b2ir2_msg.transform.translation.y = -d2ir2_extrinsics.translation[0];
-      b2ir2_msg.transform.translation.z = -d2ir2_extrinsics.translation[1];
-      b2ir2_msg.transform.rotation.x = q.x();
-      b2ir2_msg.transform.rotation.y = q.y();
-      b2ir2_msg.transform.rotation.z = q.z();
-      b2ir2_msg.transform.rotation.w = q.w();
-      _static_tf_broadcaster.sendTransform(b2ir2_msg);
+        // Transform base frame to infra2
+        b2ir2_msg.header.stamp = transform_ts_;
+        b2ir2_msg.header.frame_id = _base_frame_id;
+        b2ir2_msg.child_frame_id = _frame_id[INFRA2];
+        b2ir2_msg.transform.translation.x = d2ir2_extrinsics.translation[2];
+        b2ir2_msg.transform.translation.y = -d2ir2_extrinsics.translation[0];
+        b2ir2_msg.transform.translation.z = -d2ir2_extrinsics.translation[1];
+        b2ir2_msg.transform.rotation.x = q.x();
+        b2ir2_msg.transform.rotation.y = q.y();
+        b2ir2_msg.transform.rotation.z = q.z();
+        b2ir2_msg.transform.rotation.w = q.w();
+        _static_tf_broadcaster.sendTransform(b2ir2_msg);
 
-      // Transform infra2 frame to infra1 optical frame
-      ir2_2_ir2o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
-      ir2_2_ir2o_msg.header.stamp = transform_ts_;
-      ir2_2_ir2o_msg.header.frame_id = _frame_id[INFRA2];
-      ir2_2_ir2o_msg.child_frame_id = _optical_frame_id[INFRA2];
-      ir2_2_ir2o_msg.transform.translation.x = 0;
-      ir2_2_ir2o_msg.transform.translation.y = 0;
-      ir2_2_ir2o_msg.transform.translation.z = 0;
-      ir2_2_ir2o_msg.transform.rotation.x = ir2_2_ir2o.getX();
-      ir2_2_ir2o_msg.transform.rotation.y = ir2_2_ir2o.getY();
-      ir2_2_ir2o_msg.transform.rotation.z = ir2_2_ir2o.getZ();
-      ir2_2_ir2o_msg.transform.rotation.w = ir2_2_ir2o.getW();
-      _static_tf_broadcaster.sendTransform(ir2_2_ir2o_msg);
+        // Transform infra2 frame to infra1 optical frame
+        ir2_2_ir2o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
+        ir2_2_ir2o_msg.header.stamp = transform_ts_;
+        ir2_2_ir2o_msg.header.frame_id = _frame_id[INFRA2];
+        ir2_2_ir2o_msg.child_frame_id = _optical_frame_id[INFRA2];
+        ir2_2_ir2o_msg.transform.translation.x = 0;
+        ir2_2_ir2o_msg.transform.translation.y = 0;
+        ir2_2_ir2o_msg.transform.translation.z = 0;
+        ir2_2_ir2o_msg.transform.rotation.x = ir2_2_ir2o.getX();
+        ir2_2_ir2o_msg.transform.rotation.y = ir2_2_ir2o.getY();
+        ir2_2_ir2o_msg.transform.rotation.z = ir2_2_ir2o.getZ();
+        ir2_2_ir2o_msg.transform.rotation.w = ir2_2_ir2o.getW();
+        _static_tf_broadcaster.sendTransform(ir2_2_ir2o_msg);
+      }
     }
     // Publish Fisheye TF
   }
