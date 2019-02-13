@@ -68,7 +68,7 @@ const stream_index_pair GYRO{RS2_STREAM_GYRO, 0};
 const stream_index_pair ACCEL{RS2_STREAM_ACCEL, 0};
 
 const std::vector<std::vector<stream_index_pair>> IMAGE_STREAMS = {{{DEPTH, INFRA1, INFRA2},
-  {COLOR}, {FISHEYE}}};
+    {COLOR}, {FISHEYE}}};
 
 const std::vector<std::vector<stream_index_pair>> HID_STREAMS = {{GYRO, ACCEL}};
 
@@ -183,15 +183,19 @@ private:
     // this->get_parameter_or("enable_sync", _sync_frames, SYNC_FRAMES);
     this->get_parameter_or("enable_depth", _enable[DEPTH], ENABLE_DEPTH);
     this->get_parameter_or("enable_aligned_depth", _align_depth, ALIGN_DEPTH);
+    this->get_parameter_or("enable_infra1", _enable[INFRA1], ENABLE_INFRA1);
+    this->get_parameter_or("enable_infra2", _enable[INFRA2], ENABLE_INFRA2);
     if (!_enable[DEPTH]) {
       _pointcloud = false;
       _align_depth = false;
+      _enable[INFRA1] = false;
+      _enable[INFRA2] = false;
     }
     if (_pointcloud || _align_depth) {
       _sync_frames = true;
-    }
-    else
+    } else {
       _sync_frames = false;
+    }
     this->get_parameter("serial_no", _serial_no);
 
     this->get_parameter_or("depth_width", _width[DEPTH], DEPTH_WIDTH);
@@ -201,12 +205,10 @@ private:
     this->get_parameter_or("infra1_width", _width[INFRA1], INFRA1_WIDTH);
     this->get_parameter_or("infra1_height", _height[INFRA1], INFRA1_HEIGHT);
     this->get_parameter_or("infra1_fps", _fps[INFRA1], INFRA1_FPS);
-    this->get_parameter_or("enable_infra1", _enable[INFRA1], ENABLE_INFRA1);
 
     this->get_parameter_or("infra2_width", _width[INFRA2], INFRA2_WIDTH);
     this->get_parameter_or("infra2_height", _height[INFRA2], INFRA2_HEIGHT);
     this->get_parameter_or("infra2_fps", _fps[INFRA2], INFRA2_FPS);
-    this->get_parameter_or("enable_infra2", _enable[INFRA2], ENABLE_INFRA2);
 
     this->get_parameter_or("color_width", _width[COLOR], COLOR_WIDTH);
     this->get_parameter_or("color_height", _height[COLOR], COLOR_HEIGHT);
@@ -830,9 +832,8 @@ private:
       c2co_msg.transform.rotation.w = q_c2co.getW();
       _static_tf_broadcaster.sendTransform(c2co_msg);
     }
-    
-    if (_enable[DEPTH]) {
 
+    if (_enable[DEPTH]) {
       rs2::stream_profile depth_profile;
       if (!getEnabledProfile(DEPTH, depth_profile)) {
         RCLCPP_ERROR(logger_, "Depth profile not found!");
