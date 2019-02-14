@@ -72,9 +72,15 @@ const std::vector<std::vector<stream_index_pair>> IMAGE_STREAMS = {{{DEPTH, INFR
 
 const std::vector<std::vector<stream_index_pair>> HID_STREAMS = {{GYRO, ACCEL}};
 
+rs2::device _dev;
 inline void signalHandler(int signum)
 {
-  std::cout << strsignal(signum) << "Signal is received! Terminate RealSense Node...\n";
+  std::cout << strsignal(signum) << " Signal is received! Terminate RealSense Node...\n";
+  auto sens = _dev.query_sensors();
+  for (auto it=sens.begin(); it!=sens.end(); it++) {
+    it->stop();
+    it->close();
+  }
   rclcpp::shutdown();
   exit(signum);
 }
@@ -1230,7 +1236,6 @@ private:
 
   rclcpp::Clock _ros_clock;
   std::unique_ptr<rs2::context> _ctx;
-  rs2::device _dev;
 
   std::map<stream_index_pair, std::unique_ptr<rs2::sensor>> _sensors;
 
