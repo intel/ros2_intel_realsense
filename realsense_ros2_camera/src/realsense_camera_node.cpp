@@ -510,6 +510,17 @@ private:
                 frame.get_timestamp(), t.nanoseconds());
               publishFrame(f, t);
             }
+
+            if (_align_depth && is_depth_frame_arrived && is_color_frame_arrived) {
+              RCLCPP_DEBUG(logger_, "publishAlignedDepthTopic(...)");
+              publishAlignedDepthImg(frame, t);
+            }
+
+            if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
+              RCLCPP_DEBUG(logger_, "publishPCTopic(...)");
+              publishPCTopic(t);
+            }
+
           } else {
             auto stream_type = frame.get_profile().stream_type();
             RCLCPP_DEBUG(logger_,
@@ -517,14 +528,6 @@ private:
               rs2_stream_to_string(stream_type), frame.get_frame_number(),
               frame.get_timestamp(), t.nanoseconds());
             publishFrame(frame, t);
-          }
-          if (_align_depth && is_depth_frame_arrived && is_color_frame_arrived) {
-            RCLCPP_DEBUG(logger_, "publishAlignedDepthTopic(...)");
-            publishAlignedDepthImg(depth_frame, t);
-          }
-          if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
-            RCLCPP_DEBUG(logger_, "publishPCTopic(...)");
-            publishPCTopic(t);
           }
         };
 
@@ -970,6 +973,7 @@ private:
       }
     }
   }
+
   rs2_extrinsics getRsExtrinsics(
     const stream_index_pair & from_stream,
     const stream_index_pair & to_stream)
@@ -978,24 +982,24 @@ private:
     auto & to = _enabled_profiles[to_stream].front();
     return from.get_extrinsics_to(to);
   }
+
   void publishAlignedDepthImg(rs2::frame depth_frame, const rclcpp::Time & t)
   {
-    auto from_image_frame = depth_frame.as<rs2::video_frame>();
-    std::vector<uint8_t> out_vec;
-    out_vec.resize(_width[DEPTH] * _height[DEPTH] * _unit_step_size[DEPTH]);
-    auto ex = getRsExtrinsics(DEPTH, COLOR);
-    alignFrame(_stream_intrinsics[DEPTH], _stream_intrinsics[COLOR],
-      depth_frame, from_image_frame.get_bytes_per_pixel(),
-      ex, out_vec);
-    auto from_image =
-      cv::Mat(_width[DEPTH], _height[DEPTH], _image_format[DEPTH], cv::Scalar(0, 0, 0));
-    from_image.data = out_vec.data();
+
+    rs2::align align(RS2_STREAM_COLOR);
+    aligned_frameset = depth_frame.apply_filter(align);
+    rs2::depth_frame aligned_depth = aligned_frameset.get_depth_frame();
     RCLCPP_DEBUG(logger_, "aligned done!");
+
+    auto vf = aligned_depth.as<rs2::video_frame>();
+    auto depth_image = cv::Mat(cv::Size(vf.get_width(), vf.get_height()), _image_format[DEPTH],
+			(void*)vf.get_data(), cv::Mat::AUTO_STEP);
+
     sensor_msgs::msg::Image::SharedPtr img;
     auto info_msg = _camera_info[DEPTH];
     img = cv_bridge::CvImage(
-      std_msgs::msg::Header(), sensor_msgs::image_encodings::TYPE_16UC1, from_image).toImageMsg();
-    auto image = depth_frame.as<rs2::video_frame>();
+      std_msgs::msg::Header(), sensor_msgs::image_encodings::TYPE_16UC1, depth_image).toImageMsg();
+    auto image = aligned_depth.as<rs2::video_frame>();
     auto bpp = image.get_bytes_per_pixel();
     auto height = image.get_height();
     auto width = image.get_width();
@@ -1007,6 +1011,7 @@ private:
     img->header.stamp = t;
     _align_depth_publisher.publish(img);
     _align_depth_camera_publisher->publish(info_msg);
+
   }
 
   void publishPCTopic(const rclcpp::Time & t)
@@ -1278,6 +1283,8 @@ private:
   bool _align_depth;
   PipelineSyncer _syncer;
   rs2_extrinsics _depth2color_extrinsics;
+
+  rs2::frameset aligned_frameset;
 };  // end class
 }  // namespace realsense_ros2_camera
 
