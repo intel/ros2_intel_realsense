@@ -134,6 +134,12 @@ install(
   DESTINATION include
 )
 
+# Install param files.
+install(DIRECTORY
+  test/param
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 # Install launch files.
 install(DIRECTORY
   launch
@@ -144,21 +150,31 @@ if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
 
-  set(REALSENSE_DEVICE_PLUGIN FALSE)
-  if(${REALSENSE_DEVICE_PLUGIN})
-    ament_add_gtest(test_api test/test_api.cpp)
-  endif()
-  if(TARGET test_api)
-    target_include_directories(test_api PUBLIC
-      ${${PROJECT_NAME}_INCLUDE_DIRS}
-    )
-    ament_target_dependencies(test_api
-      rclcpp
-      sensor_msgs
-      tf2_ros
-      tf2
-      OpenCV)
-  endif()
+  macro(custom_gtest target)
+    ament_add_gtest(${target} ${ARGN})
+    if(TARGET ${target})
+      target_include_directories(${target} PUBLIC
+        ${${PROJECT_NAME}_INCLUDE_DIRS}
+      )
+      ament_target_dependencies(${target}
+        "rclcpp"
+        "OpenCV"
+        "sensor_msgs"
+        "tf2_ros"
+        "tf2")
+    endif()
+  endmacro()
+
+  custom_gtest(test_api_enableAll
+    "test/test_api_enableAll.cpp"
+    TIMEOUT 100)
+  custom_gtest(test_api_enableColor
+    "test/test_api_enableColor.cpp"
+    TIMEOUT 100)
+  custom_gtest(test_api_enableDepth
+    "test/test_api_enableDepth.cpp"
+    TIMEOUT 100)
+
 endif()
 
 ament_package()
