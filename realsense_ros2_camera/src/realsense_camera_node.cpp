@@ -369,12 +369,19 @@ private:
         _pointcloud_publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>(
           "camera/depth/color/points", 1);
       }
+
       if (_align_depth) {
         _align_depth_publisher = image_transport::create_publisher(
           this, "camera/aligned_depth_to_color/image_raw");
         _align_depth_camera_publisher = this->create_publisher<sensor_msgs::msg::CameraInfo>(
           "camera/aligned_depth_to_color/camera_info", 1);
       }
+
+      if (_pointcloud && _align_depth) {
+        _align_pointcloud_publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+          "camera/aligned_depth_to_color/color/points", 1);
+	  }
+
     }
 
     if (true == _enable[INFRA1]) {
@@ -527,6 +534,11 @@ private:
             if (_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
               RCLCPP_DEBUG(logger_, "publishPCTopic(...)");
               publishPCTopic(t);
+            }
+
+            if (_align_depth && _pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
+              RCLCPP_DEBUG(logger_, "publishAlignedPCTopic(...)");
+              publishAlignedPCTopic(t);
             }
 
           } else {
@@ -994,8 +1006,8 @@ private:
   {
 
     rs2::align align(RS2_STREAM_COLOR);
-    aligned_frameset = depth_frame.apply_filter(align);
-    rs2::depth_frame aligned_depth = aligned_frameset.get_depth_frame();
+    _aligned_frameset = depth_frame.apply_filter(align);
+    rs2::depth_frame aligned_depth = _aligned_frameset.get_depth_frame();
     RCLCPP_DEBUG(logger_, "aligned done!");
 
     auto vf = aligned_depth.as<rs2::video_frame>();
@@ -1099,6 +1111,60 @@ private:
     }
     _pointcloud_publisher->publish(msg_pointcloud);
   }
+
+  void publishAlignedPCTopic(const rclcpp::Time & t)
+  {
+    rs2::depth_frame aligned_depth = _aligned_frameset.get_depth_frame();
+
+    auto image_depth16 = reinterpret_cast<const uint16_t *>(aligned_depth.get_data());
+    auto depth_intrinsics = _stream_intrinsics[COLOR];
+    sensor_msgs::msg::PointCloud2 msg_pointcloud;
+    msg_pointcloud.header.stamp = t;
+    msg_pointcloud.header.frame_id = _optical_frame_id[DEPTH];
+    msg_pointcloud.width = depth_intrinsics.width;
+    msg_pointcloud.height = depth_intrinsics.height;
+    msg_pointcloud.is_dense = true;
+
+    sensor_msgs::PointCloud2Modifier modifier(msg_pointcloud);
+
+    modifier.setPointCloud2Fields(3,
+      "x", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "y", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "z", 1, sensor_msgs::msg::PointField::FLOAT32);
+    modifier.setPointCloud2FieldsByString(1, "xyz");
+
+    sensor_msgs::PointCloud2Iterator<float> iter_x(msg_pointcloud, "x");
+    sensor_msgs::PointCloud2Iterator<float> iter_y(msg_pointcloud, "y");
+    sensor_msgs::PointCloud2Iterator<float> iter_z(msg_pointcloud, "z");
+
+    float std_nan = std::numeric_limits<float>::quiet_NaN();
+    float depth_point[3], scaled_depth;
+
+    // Fill the PointCloud2 fields
+    for (int y = 0; y < depth_intrinsics.height; ++y) {
+      for (int x = 0; x < depth_intrinsics.width; ++x) {
+        scaled_depth = static_cast<float>(*image_depth16) * _depth_scale_meters;
+        float depth_pixel[2] = {static_cast<float>(x), static_cast<float>(y)};
+        rs2_deproject_pixel_to_point(depth_point, &depth_intrinsics, depth_pixel, scaled_depth);
+        auto iter_offset = x  + y * depth_intrinsics.width;
+
+        if (depth_point[2] <= 0.f || depth_point[2] > 5.f) {
+            *(iter_x + iter_offset) = std_nan;
+            *(iter_y + iter_offset) = std_nan;
+            *(iter_z + iter_offset) = std_nan;
+        } else {
+            *(iter_x + iter_offset) = depth_point[0];
+            *(iter_y + iter_offset) = depth_point[1];
+            *(iter_z + iter_offset) = depth_point[2];
+		}
+
+        ++image_depth16;
+      }
+    }
+
+    _align_pointcloud_publisher->publish(msg_pointcloud);
+  }
+
 
   Extrinsics rsExtrinsicsToMsg(const rs2_extrinsics & extrinsics) const
   {
@@ -1282,6 +1348,8 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr _align_depth_camera_publisher;
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _pointcloud_publisher;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr _align_pointcloud_publisher;
+
   rclcpp::Time _ros_time_base;
   rclcpp::Logger logger_ = rclcpp::get_logger("RealSenseCameraNode");
   bool _sync_frames;
@@ -1290,7 +1358,7 @@ private:
   PipelineSyncer _syncer;
   rs2_extrinsics _depth2color_extrinsics;
 
-  rs2::frameset aligned_frameset;
+  rs2::frameset _aligned_frameset;
 };  // end class
 }  // namespace realsense_ros2_camera
 
