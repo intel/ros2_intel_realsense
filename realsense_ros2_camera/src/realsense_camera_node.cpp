@@ -180,6 +180,7 @@ private:
     RCLCPP_INFO(logger_, "getParameters...");
 
     this->get_parameter_or("enable_pointcloud", _pointcloud, POINTCLOUD);
+    this->get_parameter_or("enable_aligned_pointcloud", _align_pointcloud, ALIGN_POINTCLOUD);
     // this->get_parameter_or("enable_sync", _sync_frames, SYNC_FRAMES);
     this->get_parameter_or("enable_depth", _enable[DEPTH], ENABLE_DEPTH);
     this->get_parameter_or("enable_aligned_depth", _align_depth, ALIGN_DEPTH);
@@ -187,6 +188,11 @@ private:
       _pointcloud = false;
       _align_depth = false;
     }
+
+    if (!_enable[DEPTH] || !_align_depth) {
+      _align_pointcloud = false;
+    }
+
     if (_pointcloud || _align_depth) {
       _sync_frames = true;
     }
@@ -369,7 +375,7 @@ private:
           "camera/aligned_depth_to_color/camera_info", 1);
       }
 
-      if (_pointcloud && _align_depth) {
+      if (_align_pointcloud && _align_depth) {
         _align_pointcloud_publisher = this->create_publisher<sensor_msgs::msg::PointCloud2>(
           "camera/aligned_depth_to_color/color/points", 1);
 	  }
@@ -528,7 +534,7 @@ private:
               publishPCTopic(t);
             }
 
-            if (_align_depth && _pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
+            if (_align_depth && _align_pointcloud && is_depth_frame_arrived && is_color_frame_arrived) {
               RCLCPP_DEBUG(logger_, "publishAlignedPCTopic(...)");
               publishAlignedPCTopic(t);
             }
@@ -1348,6 +1354,7 @@ private:
   rclcpp::Logger logger_ = rclcpp::get_logger("RealSenseCameraNode");
   bool _sync_frames;
   bool _pointcloud;
+  bool _align_pointcloud;
   bool _align_depth;
   PipelineSyncer _syncer;
   rs2_extrinsics _depth2color_extrinsics;
