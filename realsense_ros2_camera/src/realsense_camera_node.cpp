@@ -1117,6 +1117,7 @@ private:
 
     auto image_depth16 = reinterpret_cast<const uint16_t *>(aligned_depth.get_data());
     auto depth_intrinsics = _stream_intrinsics[COLOR];
+    unsigned char * color_data = _image[COLOR].data;
     sensor_msgs::msg::PointCloud2 msg_pointcloud;
     msg_pointcloud.header.stamp = t;
     msg_pointcloud.header.frame_id = _optical_frame_id[DEPTH];
@@ -1129,12 +1130,17 @@ private:
     modifier.setPointCloud2Fields(3,
       "x", 1, sensor_msgs::msg::PointField::FLOAT32,
       "y", 1, sensor_msgs::msg::PointField::FLOAT32,
-      "z", 1, sensor_msgs::msg::PointField::FLOAT32);
-    modifier.setPointCloud2FieldsByString(1, "xyz");
+      "z", 1, sensor_msgs::msg::PointField::FLOAT32,
+      "rgb", 1, sensor_msgs::msg::PointField::FLOAT32);
+    modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
 
     sensor_msgs::PointCloud2Iterator<float> iter_x(msg_pointcloud, "x");
     sensor_msgs::PointCloud2Iterator<float> iter_y(msg_pointcloud, "y");
     sensor_msgs::PointCloud2Iterator<float> iter_z(msg_pointcloud, "z");
+
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_r(msg_pointcloud, "r");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(msg_pointcloud, "g");
+    sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(msg_pointcloud, "b");
 
     float std_nan = std::numeric_limits<float>::quiet_NaN();
     float depth_point[3], scaled_depth;
@@ -1151,10 +1157,16 @@ private:
             *(iter_x + iter_offset) = std_nan;
             *(iter_y + iter_offset) = std_nan;
             *(iter_z + iter_offset) = std_nan;
+            *(iter_r + iter_offset) = static_cast<uint8_t>(96);
+            *(iter_g + iter_offset) = static_cast<uint8_t>(157);
+            *(iter_b + iter_offset) = static_cast<uint8_t>(198);
         } else {
             *(iter_x + iter_offset) = depth_point[0];
             *(iter_y + iter_offset) = depth_point[1];
             *(iter_z + iter_offset) = depth_point[2];
+            *(iter_r + iter_offset) = color_data[iter_offset*3];
+            *(iter_g + iter_offset) = color_data[iter_offset*3 + 1];
+            *(iter_b + iter_offset) = color_data[iter_offset*3 + 2];
 		}
 
         ++image_depth16;
