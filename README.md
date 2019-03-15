@@ -23,6 +23,7 @@ The following instructions were verified with ROS2 crystal on **Ubutnu 18.04**.
   * rosidl_default_runtime
 
 #### Install ROS2 dependences
+  Currently, we support librealsense master branch.
   ```bash
   sudo apt-get install ros-crystal-cv-bridge ros-crystal-librealsense2 ros-crystal-message-filters ros-crystal-image-transport
   ```
