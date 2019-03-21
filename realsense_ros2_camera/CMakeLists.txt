@@ -91,7 +91,8 @@ include_directories(
 
 add_executable(${PROJECT_NAME}
   include/${PROJECT_NAME}/constants.hpp
-  src/realsense_camera_node.cpp
+  include/${PROJECT_NAME}/base_realsense_node.hpp
+  src/base_realsense_node.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
