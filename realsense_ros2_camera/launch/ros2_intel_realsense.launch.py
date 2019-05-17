@@ -18,17 +18,22 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.substitutions import LaunchConfiguration, EnvironmentVariable
 import launch_ros.actions
 
 
 def generate_launch_description():
     default_rviz = os.path.join(get_package_share_directory('realsense_ros2_camera'),
                                 'launch', 'default.rviz')
+    parameters_file = os.path.join(get_package_share_directory('realsense_ros2_camera'),
+                                'launch', 'parameters.yaml')
+
     return LaunchDescription([
         # Realsense
         launch_ros.actions.Node(
-            package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
-            output='screen'),
+            package='realsense_ros2_camera', node_executable='realsense_ros2_camera', 
+            node_name='realsense_ros2_camera',
+            output='screen', parameters=[parameters_file]),
 
         # Rviz
         launch_ros.actions.Node(

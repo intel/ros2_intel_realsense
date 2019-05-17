@@ -208,7 +208,7 @@ private:
     } else {
       _sync_frames = false;
     }
-    this->get_parameter("serial_no", _serial_no);
+    this->get_parameter_or("serial_no", _serial_no, std::string(""));
 
     this->get_parameter_or("depth_width", _width[DEPTH], DEPTH_WIDTH);
     this->get_parameter_or("depth_height", _height[DEPTH], DEPTH_HEIGHT);
@@ -284,9 +284,27 @@ private:
         exit(1);
       }
 
-      // Take the first device in the list.
-      // Add an ability to get the specific device to work with from outside.
-      _dev = list.front();
+      // Get through the list to get the sensor with the right serial number
+      // or the first device if the serial number is not specified.
+      //_dev = list.front();
+      bool found = false;
+      for (auto&& dev : list)
+      {
+        auto sn = dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+        RCLCPP_INFO(logger_, "Device with serial number %s was found.", sn);
+        RCLCPP_INFO(logger_, "We are looking for serial number %s.", _serial_no);
+        if (_serial_no.empty() || sn == _serial_no)
+        {
+          _dev = dev;
+          _serial_no = sn;
+          found = true;
+          break;
+        }
+      }
+      if (!found)
+      {
+        RCLCPP_FATAL(logger_, "The requested device with serial number %s is NOT found!", _serial_no);
+      }
       _ctx->set_devices_changed_callback([this](rs2::event_information & info)
         {
           if (info.was_removed(_dev)) {
