@@ -128,7 +128,7 @@ private:
   std::map<stream_index_pair, int> fps_;
   std::map<stream_index_pair, bool> enable_;
   
-  tf2_ros::StaticTransformBroadcaster static_tf_broadcaster_;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
 
   std::map<stream_index_pair, image_transport::Publisher> image_publishers_;
   std::map<stream_index_pair,

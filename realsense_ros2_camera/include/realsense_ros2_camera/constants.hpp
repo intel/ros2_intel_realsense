@@ -42,7 +42,7 @@ const uint16_t RS400_MM_PID     = 0x0b00; // PSR
 const uint16_t RS430_MM_RGB_PID = 0x0b01; // AWGCT
 const uint16_t RS460_PID        = 0x0b03; // DS5U
 const uint16_t RS435_RGB_PID    = 0x0b07; // AWGC
-const uint16_t RS435i_RGB_PID   = 0x0B3A; // AWGC_MM
+const uint16_t RS435i_RGB_PID   = 0x0B3A; // AWGC_MM 
 const uint16_t RS405_PID        = 0x0b0c; // DS5U
 const uint16_t RS_T265_PID      = 0x0b37; // 
 

@@ -34,7 +34,6 @@ void signalHandler(int signum)
 RealSenseCameraNode::RealSenseCameraNode()
 : Node("RealSenseCameraNode"),
   serial_no_(""),
-  static_tf_broadcaster_(std::shared_ptr<rclcpp::Node>(this)),
   base_frame_id_(""),
   intialize_time_base_(false),
   ros_clock_(RCL_ROS_TIME),
@@ -42,7 +41,6 @@ RealSenseCameraNode::RealSenseCameraNode()
   {
     RCLCPP_INFO(logger_, "RealSense ROS v%s", REALSENSE_ROS_VERSION_STR);
     RCLCPP_INFO(logger_, "Running with LibRealSense v%s", RS2_API_VERSION_STR);
-    
     signal(SIGINT, signalHandler);
     auto severity = rs2_log_severity::RS2_LOG_SEVERITY_ERROR;
     tryGetLogSeverity(severity);
@@ -372,6 +370,8 @@ void RealSenseCameraNode::setupPublishers()
     align_pointcloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
       "camera/aligned_depth_to_color/color/points", 1);
   }
+  static_tf_broadcaster_ = 
+  std::make_shared<tf2_ros::StaticTransformBroadcaster>(shared_from_this());
 }
   
 void RealSenseCameraNode::setupStreams()
@@ -669,7 +669,7 @@ void RealSenseCameraNode::publishStaticTransforms()
   b2d_msg.transform.rotation.y = 0;
   b2d_msg.transform.rotation.z = 0;
   b2d_msg.transform.rotation.w = 1;
-  static_tf_broadcaster_.sendTransform(b2d_msg);
+  static_tf_broadcaster_->sendTransform(b2d_msg);
 
   // Transform depth frame to depth optical frame
   q_d2do.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -683,7 +683,7 @@ void RealSenseCameraNode::publishStaticTransforms()
   d2do_msg.transform.rotation.y = q_d2do.getY();
   d2do_msg.transform.rotation.z = q_d2do.getZ();
   d2do_msg.transform.rotation.w = q_d2do.getW();
-  static_tf_broadcaster_.sendTransform(d2do_msg);
+  static_tf_broadcaster_->sendTransform(d2do_msg);
 
 
   if (true == enable_[COLOR]) {
@@ -700,7 +700,7 @@ void RealSenseCameraNode::publishStaticTransforms()
     b2c_msg.transform.rotation.y = q.y();
     b2c_msg.transform.rotation.z = q.z();
     b2c_msg.transform.rotation.w = q.w();
-    static_tf_broadcaster_.sendTransform(b2c_msg);
+    static_tf_broadcaster_->sendTransform(b2c_msg);
 
     // Transform color frame to color optical frame
     q_c2co.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -714,7 +714,7 @@ void RealSenseCameraNode::publishStaticTransforms()
     c2co_msg.transform.rotation.y = q_c2co.getY();
     c2co_msg.transform.rotation.z = q_c2co.getZ();
     c2co_msg.transform.rotation.w = q_c2co.getW();
-    static_tf_broadcaster_.sendTransform(c2co_msg);
+    static_tf_broadcaster_->sendTransform(c2co_msg);
   }
 
   if (enable_[DEPTH]) {
@@ -740,7 +740,7 @@ void RealSenseCameraNode::publishStaticTransforms()
       b2ir1_msg.transform.rotation.y = q.y();
       b2ir1_msg.transform.rotation.z = q.z();
       b2ir1_msg.transform.rotation.w = q.w();
-      static_tf_broadcaster_.sendTransform(b2ir1_msg);
+      static_tf_broadcaster_->sendTransform(b2ir1_msg);
 
       // Transform infra1 frame to infra1 optical frame
       ir1_2_ir1o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -754,7 +754,7 @@ void RealSenseCameraNode::publishStaticTransforms()
       ir1_2_ir1o_msg.transform.rotation.y = ir1_2_ir1o.getY();
       ir1_2_ir1o_msg.transform.rotation.z = ir1_2_ir1o.getZ();
       ir1_2_ir1o_msg.transform.rotation.w = ir1_2_ir1o.getW();
-      static_tf_broadcaster_.sendTransform(ir1_2_ir1o_msg);
+      static_tf_broadcaster_->sendTransform(ir1_2_ir1o_msg);
     }
 
     if (true == enable_[INFRA2]) {
@@ -772,7 +772,7 @@ void RealSenseCameraNode::publishStaticTransforms()
       b2ir2_msg.transform.rotation.y = q.y();
       b2ir2_msg.transform.rotation.z = q.z();
       b2ir2_msg.transform.rotation.w = q.w();
-      static_tf_broadcaster_.sendTransform(b2ir2_msg);
+      static_tf_broadcaster_->sendTransform(b2ir2_msg);
 
       // Transform infra2 frame to infra1 optical frame
       ir2_2_ir2o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -786,7 +786,7 @@ void RealSenseCameraNode::publishStaticTransforms()
       ir2_2_ir2o_msg.transform.rotation.y = ir2_2_ir2o.getY();
       ir2_2_ir2o_msg.transform.rotation.z = ir2_2_ir2o.getZ();
       ir2_2_ir2o_msg.transform.rotation.w = ir2_2_ir2o.getW();
-      static_tf_broadcaster_.sendTransform(ir2_2_ir2o_msg);
+      static_tf_broadcaster_->sendTransform(ir2_2_ir2o_msg);
     }
   }
     // Publish Fisheye TF
