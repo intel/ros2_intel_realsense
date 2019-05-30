@@ -49,8 +49,8 @@ if(UNIX OR APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
 endif()
 
-find_package(realsense2)
-if(NOT realsense2_FOUND)
+find_package(librealsense2)
+if(NOT librealsense2_FOUND)
   message(FATAL_ERROR "\n\n Intel RealSense SDK 2.0 is missing, please install it from https://github.com/IntelRealSense/librealsense/releases\n\n")
 endif()
 
@@ -86,7 +86,7 @@ include_directories(
   ${cv_bridge_INCLUDE_DIRS}
   ${tf2_ros_INCLUDE_DIRS}
   ${tf2_INCLUDE_DIRS}
-  ${realsense2_INCLUDE_DIRS}
+  ${librealsense2_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME}
@@ -104,7 +104,7 @@ target_link_libraries(${PROJECT_NAME}
   ${tf2_LIBRARIES}
   ${realsense_camera_msgs_LIBRARIES}
   ${cv_bridge_LIBRARIES}
-  realsense2
+  ${librealsense2_LIBRARIES}
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
@@ -117,7 +117,7 @@ ament_target_dependencies(${PROJECT_NAME}
   cv_bridge
   OpenCV
   image_transport
-  realsense2
+  librealsense2
 )
 
 # Install binaries
