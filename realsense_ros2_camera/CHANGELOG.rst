@@ -9,8 +9,8 @@ Changelog for package realsense_ros2_camera
 * Add eigen as a build dependency.
 * Contributors: Chris Ye, Steven! Ragnarök
 
-Forthcoming
------------
+2.0.4 (2019-05-30)
+------------------
 * Merge pull request `#50 <https://github.com/intel/ros2_intel_realsense/issues/50>`_ from ahuizxc/dashing
   fix compiling failure after ros2 core updated and remove some warnings.
 * fix compiling failure after ros2 core updated and remove some warnings.

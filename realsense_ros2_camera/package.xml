@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="2">
   <name>realsense_ros2_camera</name>
-  <version>2.0.3</version>
+  <version>2.0.4</version>
   <description>The realsense_ros2_camera package</description>
   <maintainer email="sharron.liu@intel.com">Sharron LIU</maintainer>
   <maintainer email="chris.ye@intel.com">Chris Ye</maintainer>
