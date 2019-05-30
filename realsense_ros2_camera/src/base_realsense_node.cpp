@@ -37,6 +37,7 @@ RealSenseCameraNode::RealSenseCameraNode()
   base_frame_id_(""),
   intialize_time_base_(false),
   ros_clock_(RCL_ROS_TIME),
+  qos(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)),
   logger_(rclcpp::get_logger("RealSenseCameraNode"))
   {
     RCLCPP_INFO(logger_, "RealSense ROS v%s", REALSENSE_ROS_VERSION_STR);
@@ -330,28 +331,28 @@ void RealSenseCameraNode::setupPublishers()
     info_publisher_[FISHEYE] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
       "camera/fisheye/camera_info", 1);
     fe_to_depth_publisher_ = this->create_publisher<realsense_camera_msgs::msg::Extrinsics>(
-      "camera/extrinsics/fisheye2depth", rmw_qos_profile_default);
+      "camera/extrinsics/fisheye2depth", qos);
   }
 
   if (true == enable_[GYRO]) {
     imu_publishers_[GYRO] = this->create_publisher<sensor_msgs::msg::Imu>("camera/gyro/sample",
       100);
     imu_info_publisher_[GYRO] = this->create_publisher<realsense_camera_msgs::msg::IMUInfo>(
-      "camera/gyro/imu_info", rmw_qos_profile_default);
+      "camera/gyro/imu_info", qos);
   }
 
   if (true == enable_[ACCEL]) {
     imu_publishers_[ACCEL] = this->create_publisher<sensor_msgs::msg::Imu>("camera/accel/sample",
       100);
     imu_info_publisher_[ACCEL] = this->create_publisher<realsense_camera_msgs::msg::IMUInfo>(
-      "camera/accel/imu_info", rmw_qos_profile_default);
+      "camera/accel/imu_info", qos);
   }
     
   if (true == enable_[FISHEYE] &&
       (true == enable_[GYRO] ||
       true == enable_[ACCEL])) {
     fe_to_imu_publisher_ = this->create_publisher<realsense_camera_msgs::msg::Extrinsics>(
-      "camera/extrinsics/fisheye2imu", rmw_qos_profile_default);
+      "camera/extrinsics/fisheye2imu", qos);
   }
     
   if (pointcloud_) {

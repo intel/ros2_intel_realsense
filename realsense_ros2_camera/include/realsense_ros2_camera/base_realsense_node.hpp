@@ -116,11 +116,11 @@ private:
   {
     float x, y, z;
   };
-  
+
   std::unique_ptr<rs2::context> ctx_;
   std::string serial_no_;
   float depth_scale_meters_;
-  
+
   std::map<stream_index_pair, std::unique_ptr<rs2::sensor>> sensors_;
   std::map<stream_index_pair, rs2_intrinsics> stream_intrinsics_;
   std::map<stream_index_pair, int> width_;
@@ -163,6 +163,7 @@ private:
   double camera_time_base_;
   
   rclcpp::Clock ros_clock_;
+  rclcpp::QoS qos;
   rclcpp::Time ros_time_base_;
   rclcpp::Logger logger_;
   bool sync_frames_;
