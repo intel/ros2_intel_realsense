@@ -23,20 +23,35 @@ import launch_ros.actions
 
 
 def generate_launch_description():
-    default_rviz = os.path.join(get_package_share_directory('realsense_ros2_camera'),
-                                'launch', 'default.rviz')
-    parameters_file = os.path.join(get_package_share_directory('realsense_ros2_camera'),
-                                'launch', 'parameters.yaml')
+    default_rviz = os.path.join(
+        get_package_share_directory('realsense_ros2_camera'),
+        'launch', 'default.rviz'
+    )
+
+    parameters_file = os.path.join(
+        get_package_share_directory('realsense_ros2_camera'),
+        'config', 'parameters.yaml'
+    )
+
+    print("parameters_file:" + parameters_file)
 
     return LaunchDescription([
         # Realsense
         launch_ros.actions.Node(
-            package='realsense_ros2_camera', node_executable='realsense_ros2_camera', 
+            node_namespace='RealSenseCameraNode_ns',
             node_name='realsense_ros2_camera',
-            output='screen', parameters=[parameters_file]),
+            package='realsense_ros2_camera',
+            node_executable='realsense_ros2_camera', 
+            output='screen',
+            parameters=[
+                parameters_file,
+            ],
+        ),
 
         # Rviz
         launch_ros.actions.Node(
-            package='rviz2', node_executable='rviz2', output='screen',
+            package='rviz2',
+            node_executable='rviz2',
+            output='screen',
             arguments=['--display-config', default_rviz]),
     ])

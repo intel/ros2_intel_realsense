@@ -276,6 +276,7 @@ private:
   void setupDevice()
   {
     RCLCPP_INFO(logger_, "setupDevice...");
+    RCLCPP_INFO(logger_, "We are looking for serial number %s.", _serial_no.c_str());
     try {
       _ctx.reset(new rs2::context());
 
