@@ -98,8 +98,9 @@ class RealSenseCameraNode : public rclcpp::Node
 {
 public:
   RealSenseCameraNode()
-  : Node("RealSenseCameraNode"),
+  : Node("RealSenseCameraNode", "RealSenseCameraNode_ns", rclcpp::NodeOptions()),
     _ros_clock(RCL_ROS_TIME),
+    _serial_no_number(0),
     _serial_no(""),
     _base_frame_id(""),
     qos(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)),
@@ -185,13 +186,13 @@ private:
   {
     RCLCPP_INFO(logger_, "getParameters...");
 
-    this->get_parameter_or("enable_pointcloud", _pointcloud, POINTCLOUD);
-    this->get_parameter_or("enable_aligned_pointcloud", _align_pointcloud, ALIGN_POINTCLOUD);
+    _pointcloud = this->declare_parameter("enable_pointcloud", POINTCLOUD);
+    _align_pointcloud = this->declare_parameter("enable_aligned_pointcloud", ALIGN_POINTCLOUD);
     // this->get_parameter_or("enable_sync", _sync_frames, SYNC_FRAMES);
-    this->get_parameter_or("enable_depth", _enable[DEPTH], ENABLE_DEPTH);
-    this->get_parameter_or("enable_aligned_depth", _align_depth, ALIGN_DEPTH);
-    this->get_parameter_or("enable_infra1", _enable[INFRA1], ENABLE_INFRA1);
-    this->get_parameter_or("enable_infra2", _enable[INFRA2], ENABLE_INFRA2);
+    _enable[DEPTH] = this->declare_parameter("enable_depth", ENABLE_DEPTH);
+    _align_depth = this->declare_parameter("enable_aligned_depth", ALIGN_DEPTH);
+    _enable[INFRA1] = this->declare_parameter("enable_infra1", ENABLE_INFRA1);
+    _enable[INFRA2] = this->declare_parameter("enable_infra2", ENABLE_INFRA2);
     if (!_enable[DEPTH]) {
       _pointcloud = false;
       _align_depth = false;
@@ -208,65 +209,67 @@ private:
     } else {
       _sync_frames = false;
     }
-    this->get_parameter_or("serial_no", _serial_no, std::string(""));
 
-    this->get_parameter_or("depth_width", _width[DEPTH], DEPTH_WIDTH);
-    this->get_parameter_or("depth_height", _height[DEPTH], DEPTH_HEIGHT);
-    this->get_parameter_or("depth_fps", _fps[DEPTH], DEPTH_FPS);
+    _serial_no_number = this->declare_parameter("serial_no", 0);
+    _serial_no = std::to_string(_serial_no_number);
 
-    this->get_parameter_or("infra1_width", _width[INFRA1], INFRA1_WIDTH);
-    this->get_parameter_or("infra1_height", _height[INFRA1], INFRA1_HEIGHT);
-    this->get_parameter_or("infra1_fps", _fps[INFRA1], INFRA1_FPS);
+    _width[DEPTH] = this->declare_parameter("depth_width", DEPTH_WIDTH);
+    _height[DEPTH] = this->declare_parameter("depth_height", DEPTH_HEIGHT);
+    _fps[DEPTH] = this->declare_parameter("depth_fps", DEPTH_FPS);
 
-    this->get_parameter_or("infra2_width", _width[INFRA2], INFRA2_WIDTH);
-    this->get_parameter_or("infra2_height", _height[INFRA2], INFRA2_HEIGHT);
-    this->get_parameter_or("infra2_fps", _fps[INFRA2], INFRA2_FPS);
+    _width[INFRA1] = this->declare_parameter("infra1_width", INFRA1_WIDTH);
+    _height[INFRA1] = this->declare_parameter("infra1_height", INFRA1_HEIGHT);
+    _fps[INFRA1] = this->declare_parameter("infra1_fps", INFRA1_FPS);
 
-    this->get_parameter_or("color_width", _width[COLOR], COLOR_WIDTH);
-    this->get_parameter_or("color_height", _height[COLOR], COLOR_HEIGHT);
-    this->get_parameter_or("color_fps", _fps[COLOR], COLOR_FPS);
-    this->get_parameter_or("enable_color", _enable[COLOR], ENABLE_COLOR);
+    _width[INFRA2] = this->declare_parameter("infra2_width", INFRA2_WIDTH);
+    _height[INFRA2] = this->declare_parameter("infra2_height", INFRA2_HEIGHT);
+    _fps[INFRA2] = this->declare_parameter("infra2_fps", INFRA2_FPS);
 
-    this->get_parameter_or("fisheye_width", _width[FISHEYE], FISHEYE_WIDTH);
-    this->get_parameter_or("fisheye_height", _height[FISHEYE], FISHEYE_HEIGHT);
-    this->get_parameter_or("fisheye_fps", _fps[FISHEYE], FISHEYE_FPS);
-    this->get_parameter_or("enable_fisheye", _enable[FISHEYE], ENABLE_FISHEYE);
+    _width[COLOR] = this->declare_parameter("color_width", COLOR_WIDTH);
+    _height[COLOR] = this->declare_parameter("color_height", COLOR_HEIGHT);
+    _fps[COLOR] = this->declare_parameter("color_fps", COLOR_FPS);
+    _enable[COLOR] = this->declare_parameter("enable_color", ENABLE_COLOR);
 
-    this->get_parameter_or("gyro_fps", _fps[GYRO], GYRO_FPS);
-    this->get_parameter_or("accel_fps", _fps[ACCEL], ACCEL_FPS);
-    this->get_parameter_or("enable_imu", _enable[GYRO], ENABLE_IMU);
-    this->get_parameter_or("enable_imu", _enable[ACCEL], ENABLE_IMU);
+    _width[FISHEYE] = this->declare_parameter("fisheye_width", FISHEYE_WIDTH);
+    _height[FISHEYE] = this->declare_parameter("fisheye_height", FISHEYE_HEIGHT);
+    _fps[FISHEYE] = this->declare_parameter("fisheye_fps", FISHEYE_FPS);
+    _enable[FISHEYE] = this->declare_parameter("enable_fisheye", ENABLE_FISHEYE);
 
-    this->get_parameter_or("base_frame_id", _base_frame_id,
+    _fps[GYRO] = this->declare_parameter("gyro_fps", GYRO_FPS);
+    _fps[ACCEL] = this->declare_parameter("accel_fps", ACCEL_FPS);
+    _enable[GYRO] = this->declare_parameter("enable_imu", ENABLE_IMU);
+    _enable[ACCEL] = _enable[GYRO];
+
+    _base_frame_id = this->declare_parameter("base_frame_id",
       std::string(DEFAULT_BASE_FRAME_ID));
-    this->get_parameter_or("depth_frame_id", _frame_id[DEPTH],
+    _frame_id[DEPTH] = this->declare_parameter("depth_frame_id",
       std::string(DEFAULT_DEPTH_FRAME_ID));
-    this->get_parameter_or("infra1_frame_id", _frame_id[INFRA1],
+    _frame_id[INFRA1] = this->declare_parameter("infra1_frame_id",
       std::string(DEFAULT_INFRA1_FRAME_ID));
-    this->get_parameter_or("infra2_frame_id", _frame_id[INFRA2],
+    _frame_id[INFRA2] = this->declare_parameter("infra2_frame_id",
       std::string(DEFAULT_INFRA2_FRAME_ID));
-    this->get_parameter_or("color_frame_id", _frame_id[COLOR],
+    _frame_id[COLOR] = this->declare_parameter("color_frame_id",
       std::string(DEFAULT_COLOR_FRAME_ID));
-    this->get_parameter_or("fisheye_frame_id", _frame_id[FISHEYE],
+    _frame_id[FISHEYE] = this->declare_parameter("fisheye_frame_id",
       std::string(DEFAULT_FISHEYE_FRAME_ID));
-    this->get_parameter_or("imu_gyro_frame_id", _frame_id[GYRO],
+    _frame_id[GYRO] = this->declare_parameter("imu_gyro_frame_id",
       std::string(DEFAULT_IMU_FRAME_ID));
-    this->get_parameter_or("imu_accel_frame_id", _frame_id[ACCEL],
+    _frame_id[ACCEL] = this->declare_parameter("imu_accel_frame_id",
       std::string(DEFAULT_IMU_FRAME_ID));
 
-    this->get_parameter_or("depth_optical_frame_id", _optical_frame_id[DEPTH],
+    _optical_frame_id[DEPTH] = this->declare_parameter("depth_optical_frame_id",
       std::string(DEFAULT_DEPTH_OPTICAL_FRAME_ID));
-    this->get_parameter_or("infra1_optical_frame_id", _optical_frame_id[INFRA1],
+    _optical_frame_id[INFRA1] = this->declare_parameter("infra1_optical_frame_id",
       std::string(DEFAULT_INFRA1_OPTICAL_FRAME_ID));
-    this->get_parameter_or("infra2_optical_frame_id", _optical_frame_id[INFRA2],
+    _optical_frame_id[INFRA2] = this->declare_parameter("infra2_optical_frame_id",
       std::string(DEFAULT_INFRA2_OPTICAL_FRAME_ID));
-    this->get_parameter_or("color_optical_frame_id", _optical_frame_id[COLOR],
+    _optical_frame_id[COLOR] = this->declare_parameter("color_optical_frame_id",
       std::string(DEFAULT_COLOR_OPTICAL_FRAME_ID));
-    this->get_parameter_or("fisheye_optical_frame_id", _optical_frame_id[FISHEYE],
+    _optical_frame_id[FISHEYE] = this->declare_parameter("fisheye_optical_frame_id",
       std::string(DEFAULT_FISHEYE_OPTICAL_FRAME_ID));
-    this->get_parameter_or("gyro_optical_frame_id", _optical_frame_id[GYRO],
+    _optical_frame_id[GYRO] = this->declare_parameter("gyro_optical_frame_id",
       std::string(DEFAULT_GYRO_OPTICAL_FRAME_ID));
-    this->get_parameter_or("accel_optical_frame_id", _optical_frame_id[ACCEL],
+    _optical_frame_id[ACCEL] = this->declare_parameter("accel_optical_frame_id",
       std::string(DEFAULT_ACCEL_OPTICAL_FRAME_ID));
   }
 
@@ -292,7 +295,7 @@ private:
       {
         auto sn = dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
         RCLCPP_INFO(logger_, "Device with serial number %s was found.", sn);
-        RCLCPP_INFO(logger_, "We are looking for serial number %s.", _serial_no);
+        RCLCPP_INFO(logger_, "We are looking for serial number %s.", _serial_no.c_str());
         if (_serial_no.empty() || sn == _serial_no)
         {
           _dev = dev;
@@ -1348,6 +1351,7 @@ private:
 
   std::map<stream_index_pair, std::unique_ptr<rs2::sensor>> _sensors;
 
+  long _serial_no_number;
   std::string _serial_no;
   float _depth_scale_meters;
 
