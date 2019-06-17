@@ -101,8 +101,8 @@ public:
   : Node("RealSenseCameraNode"),
     _ros_clock(RCL_ROS_TIME),
     _serial_no(""),
-    _static_tf_broadcaster(std::shared_ptr<rclcpp::Node>(this)),
     _base_frame_id(""),
+    qos(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)),
     _intialize_time_base(false)
   {
     RCLCPP_INFO(logger_, "RealSense ROS v%s", REALSENSE_ROS_VERSION_STR);
@@ -437,21 +437,21 @@ private:
       _info_publisher[FISHEYE] = this->create_publisher<sensor_msgs::msg::CameraInfo>(
         "camera/fisheye/camera_info", 1);
       _fe_to_depth_publisher = this->create_publisher<realsense_camera_msgs::msg::Extrinsics>(
-        "camera/extrinsics/fisheye2depth", rmw_qos_profile_default);
+        "camera/extrinsics/fisheye2depth", qos);
     }
 
     if (true == _enable[GYRO]) {
       _imu_publishers[GYRO] = this->create_publisher<sensor_msgs::msg::Imu>("camera/gyro/sample",
           100);
       _imu_info_publisher[GYRO] = this->create_publisher<realsense_camera_msgs::msg::IMUInfo>(
-        "camera/gyro/imu_info", rmw_qos_profile_default);
+        "camera/gyro/imu_info", qos);
     }
 
     if (true == _enable[ACCEL]) {
       _imu_publishers[ACCEL] = this->create_publisher<sensor_msgs::msg::Imu>("camera/accel/sample",
           100);
       _imu_info_publisher[ACCEL] = this->create_publisher<realsense_camera_msgs::msg::IMUInfo>(
-        "camera/accel/imu_info", rmw_qos_profile_default);
+        "camera/accel/imu_info", qos);
     }
 
     if (true == _enable[FISHEYE] &&
@@ -459,8 +459,10 @@ private:
       true == _enable[ACCEL]))
     {
       _fe_to_imu_publisher = this->create_publisher<realsense_camera_msgs::msg::Extrinsics>(
-        "camera/extrinsics/fisheye2imu", rmw_qos_profile_default);
+        "camera/extrinsics/fisheye2imu", qos);
     }
+    _static_tf_broadcaster_ =
+      std::make_shared<tf2_ros::StaticTransformBroadcaster>(shared_from_this());
   }
 
   void setupStreams()
@@ -830,7 +832,7 @@ private:
     b2d_msg.transform.rotation.y = 0;
     b2d_msg.transform.rotation.z = 0;
     b2d_msg.transform.rotation.w = 1;
-    _static_tf_broadcaster.sendTransform(b2d_msg);
+   _static_tf_broadcaster_->sendTransform(b2d_msg);
 
     // Transform depth frame to depth optical frame
     q_d2do.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -844,7 +846,7 @@ private:
     d2do_msg.transform.rotation.y = q_d2do.getY();
     d2do_msg.transform.rotation.z = q_d2do.getZ();
     d2do_msg.transform.rotation.w = q_d2do.getW();
-    _static_tf_broadcaster.sendTransform(d2do_msg);
+   _static_tf_broadcaster_->sendTransform(d2do_msg);
 
 
     if (true == _enable[COLOR]) {
@@ -861,7 +863,7 @@ private:
       b2c_msg.transform.rotation.y = q.y();
       b2c_msg.transform.rotation.z = q.z();
       b2c_msg.transform.rotation.w = q.w();
-      _static_tf_broadcaster.sendTransform(b2c_msg);
+     _static_tf_broadcaster_->sendTransform(b2c_msg);
 
       // Transform color frame to color optical frame
       q_c2co.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -875,7 +877,7 @@ private:
       c2co_msg.transform.rotation.y = q_c2co.getY();
       c2co_msg.transform.rotation.z = q_c2co.getZ();
       c2co_msg.transform.rotation.w = q_c2co.getW();
-      _static_tf_broadcaster.sendTransform(c2co_msg);
+     _static_tf_broadcaster_->sendTransform(c2co_msg);
     }
 
     if (_enable[DEPTH]) {
@@ -901,7 +903,7 @@ private:
         b2ir1_msg.transform.rotation.y = q.y();
         b2ir1_msg.transform.rotation.z = q.z();
         b2ir1_msg.transform.rotation.w = q.w();
-        _static_tf_broadcaster.sendTransform(b2ir1_msg);
+       _static_tf_broadcaster_->sendTransform(b2ir1_msg);
 
         // Transform infra1 frame to infra1 optical frame
         ir1_2_ir1o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -915,7 +917,7 @@ private:
         ir1_2_ir1o_msg.transform.rotation.y = ir1_2_ir1o.getY();
         ir1_2_ir1o_msg.transform.rotation.z = ir1_2_ir1o.getZ();
         ir1_2_ir1o_msg.transform.rotation.w = ir1_2_ir1o.getW();
-        _static_tf_broadcaster.sendTransform(ir1_2_ir1o_msg);
+       _static_tf_broadcaster_->sendTransform(ir1_2_ir1o_msg);
       }
 
       if (true == _enable[INFRA2]) {
@@ -933,7 +935,7 @@ private:
         b2ir2_msg.transform.rotation.y = q.y();
         b2ir2_msg.transform.rotation.z = q.z();
         b2ir2_msg.transform.rotation.w = q.w();
-        _static_tf_broadcaster.sendTransform(b2ir2_msg);
+       _static_tf_broadcaster_->sendTransform(b2ir2_msg);
 
         // Transform infra2 frame to infra1 optical frame
         ir2_2_ir2o.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
@@ -947,7 +949,7 @@ private:
         ir2_2_ir2o_msg.transform.rotation.y = ir2_2_ir2o.getY();
         ir2_2_ir2o_msg.transform.rotation.z = ir2_2_ir2o.getZ();
         ir2_2_ir2o_msg.transform.rotation.w = ir2_2_ir2o.getW();
-        _static_tf_broadcaster.sendTransform(ir2_2_ir2o_msg);
+       _static_tf_broadcaster_->sendTransform(ir2_2_ir2o_msg);
       }
     }
     // Publish Fisheye TF
@@ -1355,7 +1357,8 @@ private:
   std::map<stream_index_pair, int> _fps;
   std::map<stream_index_pair, bool> _enable;
   std::map<stream_index_pair, std::string> _stream_name;
-  tf2_ros::StaticTransformBroadcaster _static_tf_broadcaster;
+
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> _static_tf_broadcaster_;
 
   std::map<stream_index_pair, image_transport::Publisher> _image_publishers;
   std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> _imu_publishers;
@@ -1376,6 +1379,8 @@ private:
   std::map<stream_index_pair, sensor_msgs::msg::CameraInfo> _camera_info;
   rclcpp::Publisher<realsense_camera_msgs::msg::Extrinsics>::SharedPtr _fe_to_depth_publisher,
     _fe_to_imu_publisher;
+
+  rclcpp::QoS qos;
   bool _intialize_time_base;
   double _camera_time_base;
   std::map<stream_index_pair, std::vector<rs2::stream_profile>> _enabled_profiles;
