@@ -97,8 +97,13 @@ public:
 class RealSenseCameraNode : public rclcpp::Node
 {
 public:
-  RealSenseCameraNode()
-  : Node("RealSenseCameraNode"),
+  RealSenseCameraNode(
+    const rclcpp::NodeOptions & options = (
+      rclcpp::NodeOptions()
+        .allow_undeclared_parameters(true)
+        .automatically_declare_parameters_from_overrides(true))
+		  )
+  : Node("RealSenseCameraNode", "", options),
     _ros_clock(RCL_ROS_TIME),
     _serial_no(""),
     _base_frame_id(""),
