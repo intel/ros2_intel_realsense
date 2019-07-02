@@ -30,8 +30,8 @@
 
 namespace realsense_ros2_camera
 {
-const bool POINTCLOUD = true;
-const bool ALIGN_POINTCLOUD = false;
+const bool POINTCLOUD = false;
+const bool ALIGN_POINTCLOUD = true;
 const bool SYNC_FRAMES = true;
 
 const bool ALIGN_DEPTH = true;
