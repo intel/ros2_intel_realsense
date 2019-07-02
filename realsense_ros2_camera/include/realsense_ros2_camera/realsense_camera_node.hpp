@@ -13,6 +13,8 @@
 // limitations under the License.
 
 // cpplint: c system headers
+#include <sys/types.h>
+#include <unistd.h>
 #include <eigen3/Eigen/Geometry>
 #include <builtin_interfaces/msg/time.hpp>
 #include <console_bridge/console.h>
@@ -98,11 +100,13 @@ class RealSenseCameraNode : public rclcpp::Node
 {
 public:
   RealSenseCameraNode()
-  : Node("RealSenseCameraNode",
-      rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)),
+  : Node("RealSenseCameraNode", rclcpp::NodeOptions().use_intra_process_comms(true)),
     _ros_clock(RCL_ROS_TIME),
-    _serial_no_number(0),
+    _serial_no_number_1(0),
+    _serial_no_number_2(0),
     _serial_no(""),
+    _serial_no_1(""),
+    _serial_no_2(""),
     _base_frame_id(""),
     qos(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)),
     _intialize_time_base(false)
@@ -211,8 +215,10 @@ private:
       _sync_frames = false;
     }
 
-    _serial_no_number = this->declare_parameter("serial_no", 0);
-    _serial_no = std::to_string(_serial_no_number);
+    _serial_no_number_1 = this->declare_parameter("serial_no_1", 0);
+    _serial_no_number_2 = this->declare_parameter("serial_no_2", 0);
+    _serial_no_1 = std::to_string(_serial_no_number_1);
+    _serial_no_2 = std::to_string(_serial_no_number_2);
 
     _width[DEPTH] = this->declare_parameter("depth_width", DEPTH_WIDTH);
     _height[DEPTH] = this->declare_parameter("depth_height", DEPTH_HEIGHT);
@@ -274,10 +280,44 @@ private:
       std::string(DEFAULT_ACCEL_OPTICAL_FRAME_ID));
   }
 
+  bool isStreaming(rs2::device& device)
+  {
+    try
+    {
+      auto dev_sensors = device.query_sensors();
+
+      for (auto && dev_sensor : dev_sensors)
+      {
+        auto sensor = new rs2::sensor(dev_sensor);
+        auto profiles = sensor->get_stream_profiles();
+	std::set<rs2::stream_profile> profiles_set(profiles.begin(), profiles.end()); 
+	profiles.clear();
+	profiles.assign(profiles_set.begin(), profiles_set.end());
+
+        for (rs2::stream_profile stream_profile : profiles)
+        { 
+	  RCLCPP_INFO(logger_, "Stream name: %s", stream_profile.stream_name().c_str());
+	}
+
+        if (!profiles.empty()) {
+          sensor->open(profiles);
+	  sensor->close();
+	}
+      }
+    } catch (const std::exception & ex) {
+      RCLCPP_ERROR(logger_, "An exception has been thrown: %s", ex.what());
+      return true;
+    }
+
+    
+    RCLCPP_INFO(logger_, "Device is not streaming");
+    return false;
+  }
+
   void setupDevice()
   {
     RCLCPP_INFO(logger_, "setupDevice...");
-    RCLCPP_INFO(logger_, "We are looking for serial number %s.", _serial_no.c_str());
+    RCLCPP_INFO(logger_, "We are looking for serial numbers %s %s.", _serial_no_1.c_str(), _serial_no_2.c_str());
     try {
       _ctx.reset(new rs2::context());
 
@@ -297,8 +337,8 @@ private:
       {
         auto sn = dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
         RCLCPP_INFO(logger_, "Device with serial number %s was found.", sn);
-        RCLCPP_INFO(logger_, "We are looking for serial number %s.", _serial_no.c_str());
-        if (_serial_no.empty() || sn == _serial_no)
+        RCLCPP_INFO(logger_, "We are looking for serial numbers %s %s.", _serial_no_1.c_str(), _serial_no_2.c_str());
+        if (!isStreaming(dev) && (sn == _serial_no_1 || sn == _serial_no_2))
         {
           _dev = dev;
           _serial_no = sn;
@@ -308,7 +348,7 @@ private:
       }
       if (!found)
       {
-        RCLCPP_FATAL(logger_, "The requested device with serial number %s is NOT found!", _serial_no);
+        RCLCPP_FATAL(logger_, "The requested device with serial numbers %s %s is NOT found!", _serial_no_1, _serial_no_2);
       }
       _ctx->set_devices_changed_callback([this](rs2::event_information & info)
         {
@@ -1045,21 +1085,25 @@ private:
     auto depth_image = cv::Mat(cv::Size(vf.get_width(), vf.get_height()), _image_format[DEPTH],
 			(void*)vf.get_data(), cv::Mat::AUTO_STEP);
 
-    sensor_msgs::msg::Image::SharedPtr img;
+    sensor_msgs::msg::Image::UniquePtr img;
     auto info_msg = _camera_info[DEPTH];
-    img = cv_bridge::CvImage(
-      std_msgs::msg::Header(), sensor_msgs::image_encodings::TYPE_16UC1, depth_image).toImageMsg();
+    cv_bridge::CvImage cv_img(
+      std_msgs::msg::Header(), sensor_msgs::image_encodings::TYPE_16UC1, depth_image);
+    sensor_msgs::msg::Image msgs_image;
+    cv_img.toImageMsg(msgs_image);
+    img = std::make_unique<sensor_msgs::msg::Image>(msgs_image);
     auto image = aligned_depth.as<rs2::video_frame>();
     auto bpp = image.get_bytes_per_pixel();
     auto height = image.get_height();
     auto width = image.get_width();
     img->width = width;
     img->height = height;
+    img->encoding = sensor_msgs::image_encodings::TYPE_16UC1;
     img->is_bigendian = false;
     img->step = width * bpp;
     img->header.frame_id = _optical_frame_id[COLOR];
     img->header.stamp = t;
-    _align_depth_publisher.publish(img);
+    _align_depth_publisher.publish(std::move(img));
     _align_depth_camera_publisher->publish(info_msg);
 
   }
@@ -1314,8 +1358,15 @@ private:
         bpp = image.get_bytes_per_pixel();
       }
 
-      sensor_msgs::msg::Image::SharedPtr img;
-      img = cv_bridge::CvImage(std_msgs::msg::Header(), _encoding[stream], image).toImageMsg();
+      sensor_msgs::msg::Image::UniquePtr img;
+      //img = cv_bridge::CvImage(std_msgs::msg::Header(), _encoding[stream], image).toImageMsg();
+
+      cv_bridge::CvImage cv_img(
+        std_msgs::msg::Header(), _encoding[stream], image);
+      sensor_msgs::msg::Image msgs_image;
+      cv_img.toImageMsg(msgs_image);
+      img = std::make_unique<sensor_msgs::msg::Image>(msgs_image);
+
       img->width = width;
       img->height = height;
       img->is_bigendian = false;
@@ -1323,11 +1374,17 @@ private:
       img->header.frame_id = _optical_frame_id[stream];
       img->header.stamp = t;
 
+      /*
+      if (stream == DEPTH) {
+        RCLCPP_INFO(logger_, "realsense_ros2_camera: pid: %i ptr: %u", getpid(), img.get());
+      }
+      */
+
       auto & cam_info = _camera_info[stream];
       cam_info.header.stamp = t;
       info_publisher->publish(cam_info);
 
-      image_publisher.publish(img);
+      image_publisher.publish(std::move(img));
       RCLCPP_DEBUG(logger_, "%s stream published",
         rs2_stream_to_string(f.get_profile().stream_type()));
     }
@@ -1353,8 +1410,11 @@ private:
 
   std::map<stream_index_pair, std::unique_ptr<rs2::sensor>> _sensors;
 
-  long _serial_no_number;
+  long _serial_no_number_1;
+  long _serial_no_number_2;
   std::string _serial_no;
+  std::string _serial_no_1;
+  std::string _serial_no_2;
   float _depth_scale_meters;
 
   std::map<stream_index_pair, rs2_intrinsics> _stream_intrinsics;
@@ -1410,6 +1470,7 @@ private:
 };  // end class
 }  // namespace realsense_ros2_camera
 
+/*
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
@@ -1419,3 +1480,4 @@ int main(int argc, char * argv[])
   rclcpp::shutdown();
   return 0;
 }
+*/

@@ -89,9 +89,13 @@ include_directories(
   ${realsense2_INCLUDE_DIRS}
 )
 
+#add_library(${PROJECT_NAME}-lib
+#  include/${PROJECT_NAME}/realsense_camera_node.hpp
+#  include/${PROJECT_NAME}/constants.hpp
+#)
+
 add_executable(${PROJECT_NAME}
-  include/${PROJECT_NAME}/constants.hpp
-  src/realsense_camera_node.cpp
+  src/main.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -119,6 +123,24 @@ ament_target_dependencies(${PROJECT_NAME}
   realsense2
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE "AMENT_INDEX_CPP_BUILDING_DLL")
+target_include_directories(${PROJECT_NAME} PUBLIC
+	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+	"$<INSTALL_INTERFACE:include>"
+)
+
+ament_export_include_directories(include)
+#ament_export_interfaces(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+#set_target_properties(${PROJECT_NAME}-lib PROPERTIES LINKER_LANGUAGE CXX)
+#target_link_libraries(${PROJECT_NAME}
+#  ${PROJECT_NAME}-lib
+#)
+
+#ament_target_dependencies(${PROJECT_NAME}
+#  ${PROJECT_NAME}-lib
+#)
+
 # Install binaries
 install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION bin
@@ -132,6 +154,7 @@ install(TARGETS ${PROJECT_NAME}
 install(
   DIRECTORY include/
   DESTINATION include
+  FILES_MATCHING PATTERN "*.hpp"
 )
 
 # Install launch files.
