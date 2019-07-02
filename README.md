@@ -89,7 +89,7 @@ This will stream all camera sensors and publish on the appropriate ROS2 topics. 
 
 [/camera/infra2/image_rect_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
 
-[/camera/depth/color/points](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/PointCloud2.msg)
+[/camera/aligned_depth_to_color/color/points](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/PointCloud2.msg)
 
 ### Visualize Depth Point Cloud
 
