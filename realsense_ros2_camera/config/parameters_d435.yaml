@@ -3,5 +3,4 @@
 
 RealSenseCameraNode:
   ros__parameters:
-    serial_no_1: 825312073597
-    serial_no_2: 841512070768
+    serial_no: 825312073597

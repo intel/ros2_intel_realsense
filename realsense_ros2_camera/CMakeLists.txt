@@ -107,7 +107,7 @@ target_link_libraries(${PROJECT_NAME}
   ${tf2_LIBRARIES}
   ${realsense_camera_msgs_LIBRARIES}
   ${cv_bridge_LIBRARIES}
-  realsense2
+  ${realsense2_LIBRARY}
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
@@ -120,7 +120,7 @@ ament_target_dependencies(${PROJECT_NAME}
   cv_bridge
   OpenCV
   image_transport
-  realsense2
+  librealsense2
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "AMENT_INDEX_CPP_BUILDING_DLL")
