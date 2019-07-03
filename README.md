@@ -9,12 +9,12 @@ The following instructions were verified with ROS2 Dashing on **Ubutnu 18.04**.
 #### Install ROS2 packages [ros-dashing-desktop](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Install-Debians)
 
 #### Install ROS2 dependences
-  Currently, we support librealsense master branch.
   ```bash
   sudo apt-get install ros-dashing-cv-bridge ros-dashing-librealsense2 ros-dashing-message-filters ros-dashing-image-transport
   ```
+  Or you may install from sources:
   * [cv_bridge](https://github.com/ros-perception/vision_opencv/tree/ros2/cv_bridge)
-  * [Intel® RealSense™ SDK 2.0](https://github.com/IntelRealSense/librealsense.git)
+  * [Intel® RealSense™ SDK 2.0](https://github.com/IntelRealSense/librealsense.git) Currently, we support librealsense master branch.
   * [ros2_message_filters](https://github.com/ros2/message_filters)
   * [ros2 image_transport](https://github.com/ros-perception/image_common/tree/ros2)
   
@@ -67,17 +67,17 @@ realsense_ros2_camera
 This will stream all camera sensors and publish on the appropriate ROS2 topics. PointCloud2 is enabled by default, till we provide ROS2 python launch options.
 
 ### Published Topics
-[/camera/depth/image_rect_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
+Rectified depth image: [/camera/depth/image_rect_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
 
-[/camera/color/image_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
+Color image: [/camera/color/image_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
 
-[/camera/infra1/image_rect_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
+Rectified infra1 image: [/camera/infra1/image_rect_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
 
-[/camera/infra2/image_rect_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
+Rectified infra2 image: [/camera/infra2/image_rect_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
 
-[/camera/aligned_depth_to_color/color/points](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/PointCloud2.msg)
+Depth registered point cloud: [/camera/aligned_depth_to_color/color/points](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/PointCloud2.msg)
 
-### Visualize Depth Aligned Point Cloud
+### Visualize Depth Aligned (i.e. Depth Registered) Point Cloud
 
 To start the camera node in ROS2 and view the depth aligned pointcloud in rviz:
 ```bash
