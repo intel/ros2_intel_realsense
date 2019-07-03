@@ -77,39 +77,52 @@ find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(image_transport REQUIRED)
 
-include_directories(
-  include
-  ${rclcpp_INCLUDE_DIRS}
-  ${rmw_implementation_INCLUDE_DIRS}
-  ${std_msgs_INCLUDE_DIRS}
-  ${sensor_msgs_INCLUDE_DIRS}
-  ${cv_bridge_INCLUDE_DIRS}
-  ${tf2_ros_INCLUDE_DIRS}
-  ${tf2_INCLUDE_DIRS}
-  ${realsense2_INCLUDE_DIRS}
+add_library(${PROJECT_NAME}-lib
+  include/${PROJECT_NAME}/realsense_camera_node.hpp
+  include/${PROJECT_NAME}/constants.hpp
 )
 
-#add_library(${PROJECT_NAME}-lib
-#  include/${PROJECT_NAME}/realsense_camera_node.hpp
-#  include/${PROJECT_NAME}/constants.hpp
-#)
+# Add an alias so that library can be used inside the build tree, e.g. when testing
+add_library(RealSenseROS2::${PROJECT_NAME}-lib ALIAS ${PROJECT_NAME}-lib)
 
-add_executable(${PROJECT_NAME}
-  src/main.cpp
+target_compile_definitions(${PROJECT_NAME}-lib PRIVATE "AMENT_INDEX_CPP_BUILDING_DLL")
+
+# Set target properties
+target_include_directories(${PROJECT_NAME}-lib
+  PUBLIC
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  INTERFACE
+    ${rclcpp_INCLUDE_DIRS}
+    ${builtin_interfaces_INCLUDE_DIRS}
+    ${rmw_implementation_INCLUDE_DIRS}
+    ${std_msgs_INCLUDE_DIRS}
+    ${sensor_msgs_INCLUDE_DIRS}
+    ${cv_bridge_INCLUDE_DIRS}
+    ${tf2_ros_INCLUDE_DIRS}
+    ${tf2_INCLUDE_DIRS}
+    ${realsense2_INCLUDE_DIRS}
+    ${realsense_camera_msgs_INCLUDE_DIRS}
 )
 
-target_link_libraries(${PROJECT_NAME}
-  ${rclcpp_LIBRARIES}
-  ${rmw_implementation_LIBRARIES}
-  ${std_msgs_LIBRARIES}
-  ${sensor_msgs_LIBRARIES}
-  ${tf2_ros_LIBRARIES}
-  ${tf2_LIBRARIES}
-  ${realsense_camera_msgs_LIBRARIES}
-  ${cv_bridge_LIBRARIES}
-  ${realsense2_LIBRARY}
+target_link_libraries(${PROJECT_NAME}-lib
+  PRIVATE
+    ${rclcpp_LIBRARIES}
+    ${rmw_implementation_LIBRARIES}
+    ${std_msgs_LIBRARIES}
+    ${sensor_msgs_LIBRARIES}
+    ${tf2_ros_LIBRARIES}
+    ${tf2_LIBRARIES}
+    ${realsense_camera_msgs_LIBRARIES}
+    ${cv_bridge_LIBRARIES}
+    ${realsense2_LIBRARY}
+    ${image_transport_LIBRARIES}
 )
-ament_target_dependencies(${PROJECT_NAME}
+
+set_target_properties(${PROJECT_NAME}-lib PROPERTIES LINKER_LANGUAGE CXX)
+target_compile_features(${PROJECT_NAME}-lib PRIVATE cxx_auto_type)
+
+ament_export_dependencies(${PROJECT_NAME}-lib
   rclcpp
   rmw_implementation
   std_msgs
@@ -123,23 +136,41 @@ ament_target_dependencies(${PROJECT_NAME}
   librealsense2
 )
 
+add_executable(${PROJECT_NAME}
+  src/main.cpp
+)
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE "AMENT_INDEX_CPP_BUILDING_DLL")
+
+# Set target properties
+target_include_directories(${PROJECT_NAME}
+  PRIVATE
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+
+target_link_libraries(${PROJECT_NAME}
+  PRIVATE
+    ${PROJECT_NAME}-lib
+)
+
 target_include_directories(${PROJECT_NAME} PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
 	"$<INSTALL_INTERFACE:include>"
 )
 
-ament_export_include_directories(include)
-#ament_export_interfaces(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+include(GNUInstallDirs)
+set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/RealSenseROS2)
 
-#set_target_properties(${PROJECT_NAME}-lib PROPERTIES LINKER_LANGUAGE CXX)
-#target_link_libraries(${PROJECT_NAME}
-#  ${PROJECT_NAME}-lib
-#)
+# Install library
+install(TARGETS ${PROJECT_NAME}-lib
+  EXPORT ${PROJECT_NAME}-lib-targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
-#ament_target_dependencies(${PROJECT_NAME}
-#  ${PROJECT_NAME}-lib
-#)
+#This is required so that the exported target has the name RealSenseROS2
+set_target_properties(${PROJECT_NAME}-lib PROPERTIES EXPORT_NAME RealSenseROS2)
 
 # Install binaries
 install(TARGETS ${PROJECT_NAME}
@@ -168,6 +199,43 @@ install(DIRECTORY
   config
   DESTINATION share/${PROJECT_NAME}/
 )
+
+#Export the targets to a script
+install(EXPORT ${PROJECT_NAME}-lib-targets
+  FILE
+  RealSenseROS2Targets.cmake
+  NAMESPACE
+    RealSenseROS2::
+  DESTINATION
+    ${INSTALL_CONFIGDIR}
+)
+
+#Create a ConfigVersion.cmake file
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/RealSenseROS2ConfigVersion.cmake
+    VERSION 1.0
+    COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/RealSenseROS2Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/RealSenseROS2Config.cmake
+    INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
+)
+
+#Install the config, configversion and custom find modules
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/RealSenseROS2Config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/RealSenseROS2ConfigVersion.cmake
+    #DESTINATION ${INSTALL_CONFIGDIR}
+    DESTINATION share/${PROJECT_NAME}/
+)
+
+# Exporting from the build tree
+export(EXPORT ${PROJECT_NAME}-lib-targets FILE ${CMAKE_CURRENT_BINARY_DIR}/RealSenseROS2Targets.cmake NAMESPACE RealSenseROS2::)
+
+#Register package in user's package registry
+export(PACKAGE ${PROJECT_NAME}-lib)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
