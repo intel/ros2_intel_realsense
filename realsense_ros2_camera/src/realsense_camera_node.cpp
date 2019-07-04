@@ -98,7 +98,8 @@ class RealSenseCameraNode : public rclcpp::Node
 {
 public:
   RealSenseCameraNode()
-  : Node("RealSenseCameraNode", "RealSenseCameraNode_ns", rclcpp::NodeOptions()),
+  : Node("RealSenseCameraNode",
+      rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)),
     _ros_clock(RCL_ROS_TIME),
     _serial_no_number(0),
     _serial_no(""),
@@ -1151,7 +1152,7 @@ private:
     unsigned char * color_data = _image[COLOR].data;
     sensor_msgs::msg::PointCloud2 msg_pointcloud;
     msg_pointcloud.header.stamp = t;
-    msg_pointcloud.header.frame_id = _optical_frame_id[DEPTH];
+    msg_pointcloud.header.frame_id = _optical_frame_id[COLOR];
     msg_pointcloud.width = depth_intrinsics.width;
     msg_pointcloud.height = depth_intrinsics.height;
     msg_pointcloud.is_dense = true;
