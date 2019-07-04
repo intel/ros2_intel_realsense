@@ -207,7 +207,7 @@ install(EXPORT ${PROJECT_NAME}-lib-targets
   NAMESPACE
     RealSenseROS2::
   DESTINATION
-    ${INSTALL_CONFIGDIR}
+    share/${PROJECT_NAME}/cmake/
 )
 
 #Create a ConfigVersion.cmake file
@@ -227,8 +227,7 @@ configure_package_config_file(${CMAKE_CURRENT_LIST_DIR}/cmake/RealSenseROS2Confi
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/RealSenseROS2Config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/RealSenseROS2ConfigVersion.cmake
-    #DESTINATION ${INSTALL_CONFIGDIR}
-    DESTINATION share/${PROJECT_NAME}/
+    DESTINATION share/${PROJECT_NAME}/cmake/
 )
 
 # Exporting from the build tree
