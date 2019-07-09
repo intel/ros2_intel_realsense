@@ -290,19 +290,19 @@ private:
       {
         auto sensor = new rs2::sensor(dev_sensor);
         auto profiles = sensor->get_stream_profiles();
-	std::set<rs2::stream_profile> profiles_set(profiles.begin(), profiles.end()); 
-	profiles.clear();
-	profiles.assign(profiles_set.begin(), profiles_set.end());
+        std::set<rs2::stream_profile> profiles_set(profiles.begin(), profiles.end()); 
+        profiles.clear();
+        profiles.assign(profiles_set.begin(), profiles_set.end());
 
         for (rs2::stream_profile stream_profile : profiles)
         { 
-	  RCLCPP_INFO(logger_, "Stream name: %s", stream_profile.stream_name().c_str());
-	}
+          RCLCPP_INFO(logger_, "Stream name: %s", stream_profile.stream_name().c_str());
+        }
 
         if (!profiles.empty()) {
           sensor->open(profiles);
-	  sensor->close();
-	}
+          sensor->close();
+        }
       }
     } catch (const std::exception & ex) {
       RCLCPP_ERROR(logger_, "An exception has been thrown: %s", ex.what());
@@ -698,36 +698,32 @@ private:
             rs2_timestamp_domain_to_string(frame.get_frame_timestamp_domain()));
 
             auto stream_index = (stream == GYRO.first) ? GYRO : ACCEL;
-            // if (0 != _info_publisher[stream_index].getNumSubscribers() ||
-            //    0 != _imu_publishers[stream_index].getNumSubscribers())
-            {
-              uint64_t elapsed_camera_ns = (frame.get_timestamp() - _camera_time_base) * 1000000;
-              rclcpp::Time t(_ros_time_base.nanoseconds() + elapsed_camera_ns, RCL_ROS_TIME);
+            uint64_t elapsed_camera_ns = (frame.get_timestamp() - _camera_time_base) * 1000000;
+            rclcpp::Time t(_ros_time_base.nanoseconds() + elapsed_camera_ns, RCL_ROS_TIME);
 
-              auto imu_msg = sensor_msgs::msg::Imu();
-              imu_msg.header.frame_id = _optical_frame_id[stream_index];
-              imu_msg.orientation.x = 0.0;
-              imu_msg.orientation.y = 0.0;
-              imu_msg.orientation.z = 0.0;
-              imu_msg.orientation.w = 0.0;
-              imu_msg.orientation_covariance = {-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+            auto imu_msg = sensor_msgs::msg::Imu();
+            imu_msg.header.frame_id = _optical_frame_id[stream_index];
+            imu_msg.orientation.x = 0.0;
+            imu_msg.orientation.y = 0.0;
+            imu_msg.orientation.z = 0.0;
+            imu_msg.orientation.w = 0.0;
+            imu_msg.orientation_covariance = {-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-              auto axes = *(reinterpret_cast<const float3 *>(frame.get_data()));
-              if (GYRO == stream_index) {
-                imu_msg.angular_velocity.x = axes.x;
-                imu_msg.angular_velocity.y = axes.y;
-                imu_msg.angular_velocity.z = axes.z;
-              } else if (ACCEL == stream_index) {
-                imu_msg.linear_acceleration.x = axes.x;
-                imu_msg.linear_acceleration.y = axes.y;
-                imu_msg.linear_acceleration.z = axes.z;
-              }
-              _seq[stream_index] += 1;
-              imu_msg.header.stamp = t;
-              _imu_publishers[stream_index]->publish(imu_msg);
-              RCLCPP_DEBUG(logger_, "Publish %s stream", rs2_stream_to_string(
-                frame.get_profile().stream_type()));
+            auto axes = *(reinterpret_cast<const float3 *>(frame.get_data()));
+            if (GYRO == stream_index) {
+              imu_msg.angular_velocity.x = axes.x;
+              imu_msg.angular_velocity.y = axes.y;
+              imu_msg.angular_velocity.z = axes.z;
+            } else if (ACCEL == stream_index) {
+              imu_msg.linear_acceleration.x = axes.x;
+              imu_msg.linear_acceleration.y = axes.y;
+              imu_msg.linear_acceleration.z = axes.z;
             }
+            _seq[stream_index] += 1;
+            imu_msg.header.stamp = t;
+            _imu_publishers[stream_index]->publish(imu_msg);
+            RCLCPP_DEBUG(logger_, "Publish %s stream", rs2_stream_to_string(
+              frame.get_profile().stream_type()));
           });
 
         if (true == _enable[GYRO]) {
@@ -1345,49 +1341,38 @@ private:
     ++(_seq[stream]);
     auto & info_publisher = _info_publisher[stream];
     auto & image_publisher = _image_publishers[stream];
-    // if (0 != info_publisher.getNumSubscribers() ||
-    //     0 != image_publisher.getNumSubscribers())
-    {
-      auto width = 0;
-      auto height = 0;
-      auto bpp = 1;
-      if (f.is<rs2::video_frame>()) {
-        auto image = f.as<rs2::video_frame>();
-        width = image.get_width();
-        height = image.get_height();
-        bpp = image.get_bytes_per_pixel();
-      }
-
-      sensor_msgs::msg::Image::UniquePtr img;
-      //img = cv_bridge::CvImage(std_msgs::msg::Header(), _encoding[stream], image).toImageMsg();
-
-      cv_bridge::CvImage cv_img(
-        std_msgs::msg::Header(), _encoding[stream], image);
-      sensor_msgs::msg::Image msgs_image;
-      cv_img.toImageMsg(msgs_image);
-      img = std::make_unique<sensor_msgs::msg::Image>(msgs_image);
-
-      img->width = width;
-      img->height = height;
-      img->is_bigendian = false;
-      img->step = width * bpp;
-      img->header.frame_id = _optical_frame_id[stream];
-      img->header.stamp = t;
-
-      /*
-      if (stream == DEPTH) {
-        RCLCPP_INFO(logger_, "realsense_ros2_camera: pid: %i ptr: %u", getpid(), img.get());
-      }
-      */
-
-      auto & cam_info = _camera_info[stream];
-      cam_info.header.stamp = t;
-      info_publisher->publish(cam_info);
-
-      image_publisher.publish(std::move(img));
-      RCLCPP_DEBUG(logger_, "%s stream published",
-        rs2_stream_to_string(f.get_profile().stream_type()));
+    auto width = 0;
+    auto height = 0;
+    auto bpp = 1;
+    if (f.is<rs2::video_frame>()) {
+      auto image = f.as<rs2::video_frame>();
+      width = image.get_width();
+      height = image.get_height();
+      bpp = image.get_bytes_per_pixel();
     }
+
+    sensor_msgs::msg::Image::UniquePtr img;
+
+    cv_bridge::CvImage cv_img(
+      std_msgs::msg::Header(), _encoding[stream], image);
+    sensor_msgs::msg::Image msgs_image;
+    cv_img.toImageMsg(msgs_image);
+    img = std::make_unique<sensor_msgs::msg::Image>(msgs_image);
+
+    img->width = width;
+    img->height = height;
+    img->is_bigendian = false;
+    img->step = width * bpp;
+    img->header.frame_id = _optical_frame_id[stream];
+    img->header.stamp = t;
+
+    auto & cam_info = _camera_info[stream];
+    cam_info.header.stamp = t;
+    info_publisher->publish(cam_info);
+
+    image_publisher.publish(std::move(img));
+    RCLCPP_DEBUG(logger_, "%s stream published",
+      rs2_stream_to_string(f.get_profile().stream_type()));
   }
 
   bool getEnabledProfile(const stream_index_pair & stream_index, rs2::stream_profile & profile)
