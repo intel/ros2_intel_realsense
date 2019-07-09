@@ -280,7 +280,7 @@ private:
       std::string(DEFAULT_ACCEL_OPTICAL_FRAME_ID));
   }
 
-  bool isStreaming(rs2::device& device)
+  bool isStreaming(const rs2::device& device)
   {
     try
     {
