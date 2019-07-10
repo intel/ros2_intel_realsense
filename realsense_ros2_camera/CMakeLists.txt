@@ -103,7 +103,7 @@ target_link_libraries(${PROJECT_NAME}
   ${tf2_LIBRARIES}
   ${realsense_camera_msgs_LIBRARIES}
   ${cv_bridge_LIBRARIES}
-  realsense2
+  ${realsense2_LIBRARY}
 )
 ament_target_dependencies(${PROJECT_NAME}
   rclcpp
