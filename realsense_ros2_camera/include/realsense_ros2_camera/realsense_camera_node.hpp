@@ -102,11 +102,8 @@ public:
   RealSenseCameraNode()
   : Node("RealSenseCameraNode", rclcpp::NodeOptions().use_intra_process_comms(true)),
     _ros_clock(RCL_ROS_TIME),
-    _serial_no_number_1(0),
-    _serial_no_number_2(0),
+    _number_of_sensors(1),
     _serial_no(""),
-    _serial_no_1(""),
-    _serial_no_2(""),
     _base_frame_id(""),
     qos(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default)),
     _intialize_time_base(false)
@@ -215,10 +212,16 @@ private:
       _sync_frames = false;
     }
 
-    _serial_no_number_1 = this->declare_parameter("serial_no_1", 0);
-    _serial_no_number_2 = this->declare_parameter("serial_no_2", 0);
-    _serial_no_1 = std::to_string(_serial_no_number_1);
-    _serial_no_2 = std::to_string(_serial_no_number_2);
+
+    _number_of_sensors = this->declare_parameter("number_of_sensors", 1);
+    _serial_nos_number = std::vector<long>(_number_of_sensors);
+    _serial_no_candidates = std::vector<std::string>(_number_of_sensors);
+
+    for (int i = 0; i < _number_of_sensors; ++i) {
+      std::string name = "serial_no_" + std::to_string(i);
+      _serial_nos_number.at(i) = this->declare_parameter(name, 0);
+      _serial_no_candidates.at(i) = std::to_string(_serial_nos_number.at(i));
+    }
 
     _width[DEPTH] = this->declare_parameter("depth_width", DEPTH_WIDTH);
     _height[DEPTH] = this->declare_parameter("depth_height", DEPTH_HEIGHT);
@@ -317,7 +320,12 @@ private:
   void setupDevice()
   {
     RCLCPP_INFO(logger_, "setupDevice...");
-    RCLCPP_INFO(logger_, "We are looking for serial numbers %s %s.", _serial_no_1.c_str(), _serial_no_2.c_str());
+    RCLCPP_INFO(logger_, "We are looking for serial numbers:");
+    
+    for (unsigned int i = 0; i < _serial_no_candidates.size(); ++i) {
+      RCLCPP_INFO(logger_, "%s", _serial_no_candidates.at(i));
+    }
+
     try {
       _ctx.reset(new rs2::context());
 
@@ -337,8 +345,9 @@ private:
       {
         auto sn = dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
         RCLCPP_INFO(logger_, "Device with serial number %s was found.", sn);
-        RCLCPP_INFO(logger_, "We are looking for serial numbers %s %s.", _serial_no_1.c_str(), _serial_no_2.c_str());
-        if (!isStreaming(dev) && (sn == _serial_no_1 || sn == _serial_no_2))
+        if (!isStreaming(dev) &&
+            (std::find(_serial_no_candidates.begin(), _serial_no_candidates.end(), sn)
+             != _serial_no_candidates.end()))
         {
           _dev = dev;
           _serial_no = sn;
@@ -348,7 +357,7 @@ private:
       }
       if (!found)
       {
-        RCLCPP_FATAL(logger_, "The requested device with serial numbers %s %s is NOT found!", _serial_no_1, _serial_no_2);
+        RCLCPP_FATAL(logger_, "The requested device is NOT found!");
       }
       _ctx->set_devices_changed_callback([this](rs2::event_information & info)
         {
@@ -1395,11 +1404,10 @@ private:
 
   std::map<stream_index_pair, std::unique_ptr<rs2::sensor>> _sensors;
 
-  long _serial_no_number_1;
-  long _serial_no_number_2;
+  int _number_of_sensors;
+  std::vector<long> _serial_nos_number;
   std::string _serial_no;
-  std::string _serial_no_1;
-  std::string _serial_no_2;
+  std::vector<std::string> _serial_no_candidates;
   float _depth_scale_meters;
 
   std::map<stream_index_pair, rs2_intrinsics> _stream_intrinsics;
