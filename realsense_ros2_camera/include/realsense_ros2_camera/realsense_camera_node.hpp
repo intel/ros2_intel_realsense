@@ -218,7 +218,7 @@ private:
     _serial_no_candidates = std::vector<std::string>(_number_of_sensors);
 
     for (int i = 0; i < _number_of_sensors; ++i) {
-      std::string name = "serial_no_" + std::to_string(i);
+      std::string name = "serial_no_" + std::to_string(i+1);
       _serial_nos_number.at(i) = this->declare_parameter(name, 0);
       _serial_no_candidates.at(i) = std::to_string(_serial_nos_number.at(i));
     }
@@ -323,7 +323,7 @@ private:
     RCLCPP_INFO(logger_, "We are looking for serial numbers:");
     
     for (unsigned int i = 0; i < _serial_no_candidates.size(); ++i) {
-      RCLCPP_INFO(logger_, "%s", _serial_no_candidates.at(i));
+      RCLCPP_INFO(logger_, "%s", _serial_no_candidates.at(i).c_str());
     }
 
     try {
