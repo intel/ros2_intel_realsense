@@ -3,6 +3,6 @@
 
 RealSenseCameraNode:
   ros__parameters:
-    number_of_sensors: 1
+    number_of_sensors: 2
     serial_no_1: 825312073597
     serial_no_2: 841512070768
