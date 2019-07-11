@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Launch realsense_ros2_camera node and rviz."""
+"""Launch realsense_ros2_camera node without rviz2."""
 
 import os
 
@@ -29,9 +29,4 @@ def generate_launch_description():
         launch_ros.actions.Node(
             package='realsense_ros2_camera', node_executable='realsense_ros2_camera',
             output='screen'),
-
-        # Rviz
-        launch_ros.actions.Node(
-            package='rviz2', node_executable='rviz2', output='screen',
-            arguments=['--display-config', default_rviz]),
     ])
