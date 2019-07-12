@@ -28,22 +28,17 @@
 #include <map>
 #include <string>
 
-bool g_enable_color = true;
 bool g_color_recv = false;
 float g_color_avg = 0.0f;
 
-bool g_enable_depth = true;
 bool g_depth_recv = false;
 
-bool g_enable_infrared1 = true;
 bool g_infrared1_recv = false;
 float g_infrared1_avg = 0.0f;
 
-bool g_enable_infrared2 = true;
 bool g_infrared2_recv = false;
 float g_infrared2_avg = 0.0f;
 
-bool g_enable_pc = true;
 bool g_pc_recv = false;
 float g_pc_depth_avg = 0.0f;
 
@@ -185,60 +180,40 @@ void tfCallback(const tf2_msgs::msg::TFMessage::SharedPtr msg)
 }
 
 TEST(TestAPI, testDepthStream) {
-  if (g_enable_depth) {
-    EXPECT_TRUE(g_depth_recv);
-  } else {
-    EXPECT_FALSE(g_depth_recv);
-  }
+  EXPECT_TRUE(g_depth_recv);
 }
 
 TEST(TestAPI, testColorStream) {
-  if (g_enable_color) {
-    EXPECT_GT(g_color_avg, 0);
-    EXPECT_TRUE(g_color_recv);
-  } else {
-    EXPECT_FALSE(g_color_recv);
-  }
+  EXPECT_GE(g_color_avg, 0);
+  EXPECT_FALSE(g_color_recv);
 }
 
 TEST(TestAPI, testInfrared1Stream) {
-  if (g_enable_infrared1) {
-    EXPECT_GT(g_infrared1_avg, 0);
-    EXPECT_TRUE(g_infrared1_recv);
-  } else {
-    EXPECT_FALSE(g_infrared1_recv);
-  }
+  EXPECT_GT(g_infrared1_avg, 0);
+  EXPECT_TRUE(g_infrared1_recv);
 }
 
 TEST(TestAPI, testInfrared2Stream) {
-  if (g_enable_infrared2) {
-    EXPECT_GT(g_infrared2_avg, 0);
-    EXPECT_TRUE(g_infrared2_recv);
-  } else {
-    EXPECT_FALSE(g_infrared2_recv);
-  }
+  EXPECT_GT(g_infrared2_avg, 0);
+  EXPECT_TRUE(g_infrared2_recv);
 }
 
 TEST(TestAPI, testPointCloud) {
-  if (g_enable_pc) {
-    EXPECT_GT(g_pc_depth_avg, 0);
-    EXPECT_TRUE(g_pc_recv);
-  } else {
-    EXPECT_FALSE(g_pc_recv);
-  }
+  EXPECT_GT(g_pc_depth_avg, 0);
+  EXPECT_TRUE(g_pc_recv);
 }
 
 TEST(TestAPI, testTF) {
   EXPECT_TRUE(g_tf_recv);
-  EXPECT_TRUE(g_tf_color);
+  EXPECT_FALSE(g_tf_color);
 }
 
 TEST(TestAPI, testLatency) {
-  EXPECT_TRUE(g_latency > 0.0f);
+  EXPECT_FALSE(g_latency > 0.0f);
 }
 
 TEST(TestAPI, testFPS) {
-  EXPECT_GT(g_fps, 0);
+  EXPECT_GE(g_fps, 0);
 }
 
 int main(int argc, char * argv[]) try
@@ -264,7 +239,7 @@ int main(int argc, char * argv[]) try
   auto sub6 = node->create_subscription<tf2_msgs::msg::TFMessage>("tf_static",
       tfCallback, rmw_qos_profile_default);
 
-  system("realsense_ros2_camera &");
+  system("ros2 launch realsense_ros2_camera realsense_params_enableDepth.launch.py &");
 
   rclcpp::WallRate loop_rate(50);
   for (int i = 0; i < 300; ++i) {
@@ -275,7 +250,7 @@ int main(int argc, char * argv[]) try
     loop_rate.sleep();
   }
 
-  system("killall realsense_ros2_camera &");
+  system("killall -s SIGINT realsense_ros2_camera &");
   return RUN_ALL_TESTS();
 } catch (...) {
 }

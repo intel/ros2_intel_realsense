@@ -1,0 +1,6 @@
+RealSenseCameraNode:
+  ros__parameters:
+    enable_depth: False
+    enable_color: True
+    enable_infra1: True
+    enable_infra2: True
