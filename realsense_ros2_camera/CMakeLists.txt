@@ -49,11 +49,6 @@ if(UNIX OR APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
 endif()
 
-find_package(librealsense2)
-if(NOT librealsense2_FOUND)
-  message(FATAL_ERROR "\n\n Intel RealSense SDK 2.0 is missing, please install it from https://github.com/IntelRealSense/librealsense/releases\n\n")
-endif()
-
 if(CMAKE_BUILD_TYPE EQUAL "RELEASE")
   message(STATUS "Create Release Build.")
   set(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
@@ -64,29 +59,19 @@ endif()
 set(CMAKE_CXX_FLAGS "-fPIE -fPIC -D_FORTIFY_SOURCE=2 -fstack-protector -Wformat -Wformat-security -Wall ${CMAKE_CXX_FLAGS}")
 
 find_package(ament_cmake REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(librealsense2 REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rmw_implementation REQUIRED)
+find_package(realsense_camera_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(realsense_camera_msgs REQUIRED)
-find_package(cv_bridge REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(image_transport REQUIRED)
 
 include_directories(
   include
-  ${rclcpp_INCLUDE_DIRS}
-  ${rmw_implementation_INCLUDE_DIRS}
-  ${std_msgs_INCLUDE_DIRS}
-  ${sensor_msgs_INCLUDE_DIRS}
-  ${cv_bridge_INCLUDE_DIRS}
-  ${tf2_ros_INCLUDE_DIRS}
-  ${tf2_INCLUDE_DIRS}
-  ${librealsense2_INCLUDE_DIRS}
 )
 
 add_executable(${PROJECT_NAME}
@@ -94,29 +79,16 @@ add_executable(${PROJECT_NAME}
   src/realsense_camera_node.cpp
 )
 
-target_link_libraries(${PROJECT_NAME}
-  ${rclcpp_LIBRARIES}
-  ${rmw_implementation_LIBRARIES}
-  ${std_msgs_LIBRARIES}
-  ${sensor_msgs_LIBRARIES}
-  ${tf2_ros_LIBRARIES}
-  ${tf2_LIBRARIES}
-  ${realsense_camera_msgs_LIBRARIES}
-  ${cv_bridge_LIBRARIES}
-  ${librealsense2_LIBRARIES}
-)
 ament_target_dependencies(${PROJECT_NAME}
-  rclcpp
-  rmw_implementation
-  std_msgs
-  sensor_msgs
-  tf2_ros
-  tf2
-  realsense_camera_msgs
   cv_bridge
-  OpenCV
   image_transport
   librealsense2
+  rclcpp
+  realsense_camera_msgs
+  std_msgs
+  sensor_msgs
+  tf2
+  tf2_ros
 )
 
 # Install binaries
@@ -142,6 +114,8 @@ install(DIRECTORY
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(OpenCV REQUIRED)
+
   ament_lint_auto_find_test_dependencies()
 
   set(REALSENSE_DEVICE_PLUGIN FALSE)
@@ -152,12 +126,12 @@ if(BUILD_TESTING)
     target_include_directories(test_api PUBLIC
       ${${PROJECT_NAME}_INCLUDE_DIRS}
     )
-    ament_target_dependencies(test_api
-      rclcpp
-      sensor_msgs
-      tf2_ros
-      tf2
-      OpenCV)
+  ament_target_dependencies(test_api
+    OpenCV
+    rclcpp
+    sensor_msgs
+    tf2
+    tf2_ros)
   endif()
 endif()
 
