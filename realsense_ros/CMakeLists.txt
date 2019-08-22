@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
-project(realsense_ros2_camera)
+project(realsense_ros)
 
-# ROS2 Flags
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
+
+# Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
 endif()
@@ -49,11 +54,6 @@ if(UNIX OR APPLE)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
 endif()
 
-find_package(realsense2)
-if(NOT realsense2_FOUND)
-  message(FATAL_ERROR "\n\n Intel RealSense SDK 2.0 is missing, please install it from https://github.com/IntelRealSense/librealsense/releases\n\n")
-endif()
-
 if(CMAKE_BUILD_TYPE EQUAL "RELEASE")
   message(STATUS "Create Release Build.")
   set(CMAKE_CXX_FLAGS "-O2 ${CMAKE_CXX_FLAGS}")
@@ -63,103 +63,92 @@ endif()
 
 set(CMAKE_CXX_FLAGS "-fPIE -fPIC -D_FORTIFY_SOURCE=2 -fstack-protector -Wformat -Wformat-security -Wall ${CMAKE_CXX_FLAGS}")
 
+# find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
-find_package(builtin_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rmw_implementation REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2 REQUIRED)
-find_package(realsense_camera_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(image_transport REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(realsense_msgs)
+
+find_package(realsense2)
+if(NOT realsense2_FOUND)
+  message(FATAL_ERROR "\n\n Intel RealSense SDK 2.0 is missing, please install it from https://github.com/IntelRealSense/librealsense/releases\n\n")
+endif()
 
 include_directories(
-  include
-  ${rclcpp_INCLUDE_DIRS}
-  ${rmw_implementation_INCLUDE_DIRS}
-  ${std_msgs_INCLUDE_DIRS}
-  ${sensor_msgs_INCLUDE_DIRS}
-  ${cv_bridge_INCLUDE_DIRS}
-  ${tf2_ros_INCLUDE_DIRS}
-  ${tf2_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${realsense2_INCLUDE_DIRS}
 )
 
-add_executable(${PROJECT_NAME}
-  include/${PROJECT_NAME}/constants.hpp
-  include/${PROJECT_NAME}/base_realsense_node.hpp
-  src/base_realsense_node.cpp
+set(node_plugins "")
+
+add_library(${PROJECT_NAME} SHARED
+  src/rs_factory.cpp
+  src/rs_base.cpp
+  src/rs_d435.cpp
+  src/rs_d435i.cpp
+  src/rs_t265.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
-  ${rclcpp_LIBRARIES}
-  ${rmw_implementation_LIBRARIES}
-  ${std_msgs_LIBRARIES}
-  ${sensor_msgs_LIBRARIES}
-  ${tf2_ros_LIBRARIES}
-  ${tf2_LIBRARIES}
-  ${realsense_camera_msgs_LIBRARIES}
-  ${cv_bridge_LIBRARIES}
-  realsense2
-)
-ament_target_dependencies(${PROJECT_NAME}
-  rclcpp
-  rmw_implementation
-  std_msgs
-  sensor_msgs
-  tf2_ros
-  tf2
-  realsense_camera_msgs
-  cv_bridge
-  OpenCV
-  image_transport
   realsense2
 )
 
-# Install binaries
+ament_target_dependencies(${PROJECT_NAME}
+  rclcpp
+  rclcpp_components
+  nav_msgs
+  sensor_msgs
+  cv_bridge
+  tf2
+  tf2_ros
+  pcl_conversions
+  realsense2
+  realsense_msgs
+)
+
+rclcpp_components_register_nodes(${PROJECT_NAME} "realsense::RealSenseNodeFactory")
+set(node_plugins "${node_plugins}realsense::RealSenseNodeFactory;$<TARGET_FILE:${PROJECT_NAME}>\n")
+
+file(GENERATE
+  OUTPUT
+  "${CMAKE_CURRENT_BINARY_DIR}/test_ament_index/$<CONFIG>/share/ament_index/resource_index/node_plugin/${PROJECT_NAME}"
+  CONTENT "${node_plugins}")
+
 install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
-install(TARGETS ${PROJECT_NAME}
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-# Install header files
 install(
   DIRECTORY include/
   DESTINATION include
 )
 
-# Install launch files.
 install(DIRECTORY
   launch
+  config
   DESTINATION share/${PROJECT_NAME}/
 )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  # the following line skips the linter which checks for copyrights
+  # uncomment the line when a copyright and license is not present in all source files
+  #set(ament_cmake_copyright_FOUND TRUE)
+  # the following line skips cpplint (only works in a git repo)
+  # uncomment the line when this package is not in a git repo
+  #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
-
-  set(REALSENSE_DEVICE_PLUGIN FALSE)
-  if(${REALSENSE_DEVICE_PLUGIN})
-    ament_add_gtest(test_api test/test_api.cpp)
-  endif()
-  if(TARGET test_api)
-    target_include_directories(test_api PUBLIC
-      ${${PROJECT_NAME}_INCLUDE_DIRS}
-    )
-    ament_target_dependencies(test_api
-      rclcpp
-      sensor_msgs
-      tf2_ros
-      tf2
-      OpenCV)
-  endif()
 endif()
+
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
 
 ament_package()
