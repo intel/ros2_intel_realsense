@@ -23,6 +23,9 @@
 #include "realsense_msgs/msg/imu_info.hpp"
 #include "librealsense2/rs.hpp"
 #include "realsense/rs_constants.hpp"
+#include <tf2/LinearMath/Quaternion.h>
+#include "tf2_ros/static_transform_broadcaster.h"
+#include <eigen3/Eigen/Geometry>
 
 namespace realsense
 {
@@ -31,6 +34,27 @@ using Result = rcl_interfaces::msg::SetParametersResult;
 class RealSenseBase
 {
 public:
+  class float3
+  {
+      public:
+          float x, y, z;
+
+      public:
+          float3& operator*=(const float& factor)
+          {
+              x*=factor;
+              y*=factor;
+              z*=factor;
+              return (*this);
+          }
+          float3& operator+=(const float3& other)
+          {
+              x+=other.x;
+              y+=other.y;
+              z+=other.z;
+              return (*this);
+          }
+  };
 	RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & node);
   virtual ~RealSenseBase();
   virtual void publishTopicsCallback(const rs2::frame & frame) = 0;
@@ -43,7 +67,15 @@ public:
   void printSupportedStreamProfiles();
   void printActiveStreamProfiles();
   void printStreamProfiles(const std::vector<rs2::stream_profile> & profile_list);
+  void publishStaticTransforms(const rs2::stream_profile base_profile, const std::vector<rs2::stream_profile> & active_profiles);
+  void calcAndPublishStaticTransform(const rs2::stream_profile & stream_in, const rs2::stream_profile & base_profile);
 
+  tf2::Quaternion rotationMatrixToQuaternion(const float rotation[9]) const;
+  void publish_static_tf(const rclcpp::Time& t,
+                        const float3& trans,
+                        const tf2::Quaternion& q,
+                        const std::string& from,
+                        const std::string& to);
 protected:
   Result toggleStream(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeResolution(const stream_index_pair & stream, const rclcpp::Parameter & param);
@@ -63,6 +95,8 @@ protected:
   }VideoStreamInfo;
 
   rclcpp::Node & node_;
+  std::string base_frame_id;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> _static_tf_broadcaster;
   rs2::context ctx_;
   rs2::device dev_;
   rs2::pipeline pipeline_;

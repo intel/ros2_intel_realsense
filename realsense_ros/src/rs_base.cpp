@@ -25,6 +25,7 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   dev_(dev)
 { 
   pipeline_ = rs2::pipeline(ctx_);
+  _static_tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node_);
   node_.set_on_parameters_set_callback(std::bind(&RealSenseBase::paramChangeCallback, this, std::placeholders::_1));
 }
 
@@ -37,11 +38,19 @@ void RealSenseBase::startPipeline()
 {
   auto p_profile = cfg_.resolve(pipeline_);
   auto active_profiles = p_profile.get_streams();
+  rs2::stream_profile base_profile;
   for (auto & profile : active_profiles) {
     if (profile.is<rs2::video_stream_profile>()) {
       updateVideoStreamCalibData(profile.as<rs2::video_stream_profile>());
     }
   }
+  try {
+    base_profile = p_profile.get_stream(DEPTH.first, DEPTH.second);
+  }
+  catch (...) {
+    base_profile = p_profile.get_stream(POSE.first, POSE.second);
+  }
+  publishStaticTransforms(base_profile, active_profiles);
   pipeline_.start(cfg_, std::bind(&RealSenseBase::publishTopicsCallback, this, std::placeholders::_1));
 }
 
@@ -186,6 +195,90 @@ void RealSenseBase::updateVideoStreamCalibData(const rs2::video_stream_profile &
       camera_info_[type_index].p.at(3) = 0;     // Tx
       camera_info_[type_index].p.at(7) = 0;     // Ty
   }
+}
+
+void RealSenseBase::calcAndPublishStaticTransform(const rs2::stream_profile & stream_in, const rs2::stream_profile & base_profile)
+{
+    // Transform base to stream
+    tf2::Quaternion quaternion_optical;
+    quaternion_optical.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
+    rclcpp::Time transform_ts_ = node_.now();
+
+    rs2_extrinsics ex;
+    try
+    {
+        ex = stream_in.get_extrinsics_to(base_profile);
+    }
+    catch (std::exception& e)
+    {
+        if (!strcmp(e.what(), "Requested extrinsics are not available!"))
+        {
+            RCLCPP_WARN(node_.get_logger(), "%s : using unity as default.", e.what());
+            ex = rs2_extrinsics({{1, 0, 0, 0, 1, 0, 0, 0, 1}, {0,0,0}});
+        }
+        else
+        {
+            throw e;
+        }
+    }
+
+    auto Q = rotationMatrixToQuaternion(ex.rotation);
+    Q = quaternion_optical * Q * quaternion_optical.inverse();
+
+    float3 trans{ex.translation[0], ex.translation[1], ex.translation[2]};
+    auto type = stream_in.stream_type();
+    auto index = stream_in.stream_index();
+    auto type_index = std::pair<rs2_stream, int>(type, index);
+    if (type == RS2_STREAM_POSE)
+    {
+      Q = Q.inverse();
+      publish_static_tf(transform_ts_, trans, Q, OPTICAL_FRAME_ID.at(type_index), base_frame_id);
+    }
+    else
+      publish_static_tf(transform_ts_, trans, Q, base_frame_id, OPTICAL_FRAME_ID.at(type_index));
+}
+
+void RealSenseBase::publish_static_tf(const rclcpp::Time& t,
+                                          const float3& trans,
+                                          const tf2::Quaternion& q,
+                                          const std::string& from,
+                                          const std::string& to)
+{
+    geometry_msgs::msg::TransformStamped msg;
+    std::cout << "Publish Static TF from --- " << from << " ---- to --- "<< to << std::endl;
+    msg.header.stamp = t;
+    msg.header.frame_id = from;
+    msg.child_frame_id = to;
+    msg.transform.translation.x = trans.z;
+    msg.transform.translation.y = -trans.x;
+    msg.transform.translation.z = -trans.y;
+    msg.transform.rotation.x = q.getX();
+    msg.transform.rotation.y = q.getY();
+    msg.transform.rotation.z = q.getZ();
+    msg.transform.rotation.w = q.getW();
+    _static_tf_broadcaster-> sendTransform(msg);
+}
+
+tf2::Quaternion RealSenseBase::rotationMatrixToQuaternion(const float rotation[9]) const
+{
+    Eigen::Matrix3f m;
+    // We need to be careful about the order, as RS2 rotation matrix is
+    // column-major, while Eigen::Matrix3f expects row-major.
+    m << rotation[0], rotation[3], rotation[6],
+         rotation[1], rotation[4], rotation[7],
+         rotation[2], rotation[5], rotation[8];
+    Eigen::Quaternionf q(m);
+    return tf2::Quaternion(q.x(), q.y(), q.z(), q.w());
+}
+
+void RealSenseBase::publishStaticTransforms(const rs2::stream_profile base_profile, const std::vector<rs2::stream_profile> & active_profiles)
+{
+    // Publish static transforms
+    base_frame_id = node_.declare_parameter("base_frame_id", DEFAULT_BASE_FRAME_ID);
+    for (auto & profile : active_profiles)
+    {
+        calcAndPublishStaticTransform(profile, base_profile);
+    }
 }
 
 void RealSenseBase::printDeviceInfo()
