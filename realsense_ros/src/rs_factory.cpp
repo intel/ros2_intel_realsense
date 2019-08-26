@@ -21,54 +21,141 @@
 namespace realsense
 {
 RealSenseNodeFactory::RealSenseNodeFactory(const std::string & node_name, const std::string & ns, const rclcpp::NodeOptions & node_options)
-: Node(node_name, ns, node_options)
+: Node(node_name, ns, node_options), logger_(rclcpp::get_logger(node_name))
 {
-  rs2::context ctx;
-  rs2::device dev;
   auto param_desc = rcl_interfaces::msg::ParameterDescriptor();
   param_desc.read_only = true;
   auto param_value = declare_parameter("serial_no", rclcpp::ParameterValue(), param_desc);
-  if (param_value.get_type() == rclcpp::PARAMETER_NOT_SET) {
-    dev = ctx.query_devices().front();
-  } else {
-    std::string serial_no = std::to_string(param_value.get<rclcpp::PARAMETER_INTEGER>());
-    auto dev_list = ctx.query_devices();
-    bool found = false;
-    for (auto && d : dev_list) {
-      if (d.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER) == serial_no) {
-        found = true;
-        dev = d;
-        break;
-      }
-    }
-    if (found == false) {
-      RCLCPP_ERROR(this->get_logger(), "The Device with serial number %s is not found. Please make sure it is connected.", serial_no.c_str());
-      rclcpp::shutdown();
-    }
+  serial_no_ = std::to_string(param_value.get<rclcpp::PARAMETER_INTEGER>());
+  try
+	{
+    _query_thread = std::thread([=]()
+              {
+                std::chrono::milliseconds timespan(600);
+                while (!dev)
+                {
+                  // rs2::context ctx;
+                  auto dev_lst = ctx.query_devices();
+                  getDevice(dev_lst);
+                  if (dev)
+                  {
+                      std::function<void(rs2::event_information&)> change_device_callback_function = [this](rs2::event_information& info){change_device_callback(info);};
+                      ctx.set_devices_changed_callback(change_device_callback_function);
+                    StartDevice();
+                  }
+                  else
+                  {
+                    std::this_thread::sleep_for(timespan);
+                  }
+                  
+                }
+              });
   }
+  catch(const std::exception& ex)
+  {
+    RCLCPP_WARN(logger_, "An exception has been thrown: %s",ex.what());
+    exit(1);
+  }
+  catch(...)
+  {
+    RCLCPP_WARN(logger_, "Unknown exception has occured!");
+    exit(1);
+  } 
+}
+
+RealSenseNodeFactory::~RealSenseNodeFactory()
+{
+  for(rs2::sensor sensor : dev.query_sensors())
+	{
+		sensor.stop();
+		sensor.close();
+	}
+}
+
+void RealSenseNodeFactory::StartDevice()
+{
   std::string pid_str = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
   uint16_t pid = std::stoi(pid_str, 0, 16);
-  switch(pid) {
-    case RS415_PID:
-    case RS435_RGB_PID:
-      RCLCPP_INFO(this->get_logger(), "Create a node for D4X5 Camera");
-      rs_node_ = std::make_shared<RealSenseD435>(ctx, dev, *this);
-      rs_node_->startPipeline();
-      break;
-    case RS435i_RGB_PID:
-      RCLCPP_INFO(this->get_logger(), "Create a node for D435i Camera");
-      rs_node_ = std::make_shared<RealSenseD435I>(ctx, dev, *this);
-      rs_node_->startPipeline();
-      break;
-    case RS_T265_PID:
-      RCLCPP_INFO(this->get_logger(), "Create a node for T265 Camera");
-      rs_node_ = std::make_shared<RealSenseT265>(ctx, dev, *this);
-      rs_node_->startPipeline();
-      break;
-    default:
-      RCLCPP_ERROR(this->get_logger(), "Unsupported device! Product ID: 0x%s", pid_str.c_str());
-      rclcpp::shutdown();
-  } 
+    switch(pid) {
+      case RS435_RGB_PID:
+        RCLCPP_INFO(logger_, "Create a node for D4X5 Camera");
+        rs_node_ = std::make_unique<RealSenseD435>(ctx, dev, *this);
+        break;
+      case RS435i_RGB_PID:
+        RCLCPP_INFO(logger_, "Create a node for D435i Camera");
+        rs_node_ = std::make_unique<RealSenseD435I>(ctx, dev, *this);
+        break;
+      case RS_T265_PID:
+        RCLCPP_INFO(logger_, "Create a node for T265 Camera");
+        rs_node_ = std::make_unique<RealSenseT265>(ctx, dev, *this);
+        break;
+      default:
+        RCLCPP_ERROR(logger_, "Unsupported device! Product ID: 0x%s", pid_str);
+        rclcpp::shutdown();
+    }
+  rs_node_->startPipeline();
+}
+
+void RealSenseNodeFactory::change_device_callback(rs2::event_information& info)
+{
+	if (info.was_removed(dev))
+	{
+		RCLCPP_ERROR(logger_, "The device has been disconnected!");
+    rs_node_.release();
+    rs_node_.reset(nullptr);
+		dev = rs2::device();
+	}
+	if (!dev)
+	{
+		rs2::device_list new_devices = info.get_new_devices();
+		if (new_devices.size() > 0)
+		{
+			RCLCPP_INFO(logger_, "Checking new devices...");
+			getDevice(new_devices);
+			if (dev)
+			{
+				StartDevice();
+			}
+		}
+	}
+}
+
+void RealSenseNodeFactory::getDevice(rs2::device_list & list)
+{
+	if (!dev)
+	{
+		if (0 == list.size())
+		{
+			RCLCPP_ERROR(logger_, "No RealSense devices were found!");
+		}
+		else
+		{
+			bool found = false;
+			for (auto&& _dev : list)
+			{
+				auto sn = _dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+				RCLCPP_INFO(logger_, "Device with serial number %s was found.", serial_no_.c_str());
+				if (serial_no_.empty() || sn == serial_no_)
+				{
+					dev = _dev;
+					serial_no_ = sn;
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				// T265 could be caught by another node.
+				RCLCPP_ERROR(logger_, "The Device with serial number %s is not found. Please make sure it is connected.", serial_no_.c_str());
+			}
+		}
+  bool remove_tm2_handle(dev && RS_T265_PID != std::stoi(dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID), 0, 16));
+	if (remove_tm2_handle)
+	{
+		ctx.unload_tracking_module();
+	}
+
+	}
 }
 }  // namespace realsense
 

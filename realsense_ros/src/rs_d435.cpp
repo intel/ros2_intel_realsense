@@ -24,8 +24,10 @@ RealSenseD435::RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   for (auto & stream : IMAGE_STREAMS) {
     setupStream(stream);
   }
-
-  align_depth_ = node_.declare_parameter("align_depth", ALIGN_DEPTH);
+  if (node_.has_parameter("align_depth"))
+    node_.get_parameter("align_depth", align_depth_);
+  else
+    align_depth_ = node_.declare_parameter("align_depth", ALIGN_DEPTH);
   if (align_depth_ == true) {
     if (enable_[COLOR] == false || enable_[DEPTH] == false) {
       RCLCPP_WARN(node_.get_logger(), "Make sure color and depth frame are enabled before aligning depth to color.");
@@ -33,8 +35,10 @@ RealSenseD435::RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   }
   aligned_depth_image_pub_ = node_.create_publisher<sensor_msgs::msg::Image>(ALIGNED_DEPTH_IMAGE_TOPIC, rclcpp::QoS(1));
   aligned_depth_info_pub_ = node_.create_publisher<sensor_msgs::msg::CameraInfo>(ALIGNED_DEPTH_INFO_TOPIC, rclcpp::QoS(1));
-
-  enable_pointcloud_ = node_.declare_parameter("enable_pointcloud", ENABLE_POINTCLOUD);
+  if (node_.has_parameter("enable_pointcloud"))
+    node_.get_parameter("enable_pointcloud", enable_pointcloud_);
+  else
+    enable_pointcloud_ = node_.declare_parameter("enable_pointcloud", ENABLE_POINTCLOUD);
   if (enable_pointcloud_ == true) {
     if (enable_[COLOR] == false || enable_[DEPTH] == false) {
       RCLCPP_WARN(node_.get_logger(), "Make sure color and depth frame are enabled before publishing pointcloud.");

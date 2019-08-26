@@ -6,17 +6,21 @@
       enable_pointcloud: true
       color0:
         enabled: true
-        resolution: [640,480]
+        height: 640
+        width: 480
         fps: 30
       depth0:
         enabled: true
-        resolution: [640,480]
+        height: 640
+        width: 480
         fps: 30
       infra1:
         enabled: true
-        resolution: [640,480]
+        height: 640
+        width: 480
         fps: 30
       infra2:
         enabled: true
-        resolution: [640,480]
+        height: 640
+        width: 480
         fps: 30

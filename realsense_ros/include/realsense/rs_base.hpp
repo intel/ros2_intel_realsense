@@ -69,7 +69,6 @@ public:
   void printStreamProfiles(const std::vector<rs2::stream_profile> & profile_list);
   void publishStaticTransforms(const rs2::stream_profile base_profile, const std::vector<rs2::stream_profile> & active_profiles);
   void calcAndPublishStaticTransform(const rs2::stream_profile & stream_in, const rs2::stream_profile & base_profile);
-
   tf2::Quaternion rotationMatrixToQuaternion(const float rotation[9]) const;
   void publish_static_tf(const rclcpp::Time& t,
                         const float3& trans,
@@ -98,7 +97,7 @@ protected:
   std::string base_frame_id;
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> _static_tf_broadcaster;
   rs2::context ctx_;
-  rs2::device dev_;
+  rs2::device  dev_;
   rs2::pipeline pipeline_;
   rs2::config cfg_;
 
