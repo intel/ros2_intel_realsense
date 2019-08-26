@@ -20,8 +20,19 @@
 
 namespace realsense
 {
+RealSenseNodeFactory::RealSenseNodeFactory(const rclcpp::NodeOptions & node_options)
+: Node("camera", "/", node_options)
+{
+  init();
+}
+
 RealSenseNodeFactory::RealSenseNodeFactory(const std::string & node_name, const std::string & ns, const rclcpp::NodeOptions & node_options)
 : Node(node_name, ns, node_options)
+{
+  init();
+}
+
+void RealSenseNodeFactory::init()
 {
   rs2::context ctx;
   rs2::device dev;
@@ -68,9 +79,9 @@ RealSenseNodeFactory::RealSenseNodeFactory(const std::string & node_name, const 
     default:
       RCLCPP_ERROR(this->get_logger(), "Unsupported device! Product ID: 0x%s", pid_str.c_str());
       rclcpp::shutdown();
-  } 
+  }
 }
 }  // namespace realsense
 
-//#include "rclcpp_components/register_node_macro.hpp"
-//RCLCPP_COMPONENTS_REGISTER_NODE(realsense::RealSenseNodeFactory)
+#include "rclcpp_components/register_node_macro.hpp"
+RCLCPP_COMPONENTS_REGISTER_NODE(realsense::RealSenseNodeFactory)

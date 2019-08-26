@@ -25,7 +25,9 @@ namespace realsense
 class RealSenseNodeFactory : public rclcpp::Node
 {
 public:
-  RealSenseNodeFactory(const std::string & node_name="camera", const std::string & ns="/", const rclcpp::NodeOptions & node_options=rclcpp::NodeOptions());
+  RealSenseNodeFactory(const rclcpp::NodeOptions & node_options=rclcpp::NodeOptions());
+  RealSenseNodeFactory(const std::string & node_name, const std::string & ns, const rclcpp::NodeOptions & node_options=rclcpp::NodeOptions());
+  void init();
   virtual ~RealSenseNodeFactory() = default;
 private:
   std::shared_ptr<RealSenseBase> rs_node_;

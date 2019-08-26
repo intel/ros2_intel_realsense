@@ -98,7 +98,7 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
       enable_[stream] = true;
       cfg_.enable_stream(stream.first, stream.second, info.width, info.height, STREAM_FORMAT.at(stream.first), info.fps);
     }
-  } 
+  }
 }
 
 void RealSenseBase::publishImageTopic(const rs2::frame & frame, const rclcpp::Time & time)
