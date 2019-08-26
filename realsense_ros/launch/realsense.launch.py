@@ -19,24 +19,36 @@ from launch_ros.descriptions import ComposableNode
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    param_file_path = os.path.join(get_package_share_directory('realsense_ros'), 'config', 'd435.yaml')
+    t265_param = os.path.join(get_package_share_directory('realsense_ros'), 'config', 't265.yaml')
+    d435_param = os.path.join(get_package_share_directory('realsense_ros'), 'config', 'd435.yaml')
+    d435i_param = os.path.join(get_package_share_directory('realsense_ros'), 'config', 'd435i.yaml')
     container = ComposableNodeContainer(
             node_name='realsense_container',
             node_namespace='',
             package='rclcpp_components',
             node_executable='component_container',
             composable_node_descriptions=[
+                # ComposableNode(
+                #     package='realsense_ros',
+                #     node_plugin='realsense::RealSenseNodeFactory',
+                #     node_namespace='/t265',
+                #     node_name='camera',
+                #     parameters=[t265_param,
+                #                 {'serial_no':'845412110563'}],),
+                # ComposableNode(
+                #     package='realsense_ros',
+                #     node_plugin='realsense::RealSenseNodeFactory',
+                #     node_namespace='/d435i',
+                #     node_name='camera',
+                #     parameters=[d435i_param,
+                #                 {'serial_no':'843112073259'}],),
                 ComposableNode(
                     package='realsense_ros',
                     node_plugin='realsense::RealSenseNodeFactory',
                     node_namespace='/d435',
-                    parameters=[param_file_path])
-                # ComposableNode(
-                #     package='realsense_node',
-                #     node_plugin='realsense::RealSenseNodeFactory',
-                #     node_namespace='/d435i',
-                #     parameters=[param_file_path,
-                #                 {'serial_no' : '843112073259'}],)
+                    node_name='camera',
+                    parameters=[d435_param,
+                                {'serial_no':'727212071015'}],),
             ],
             output='screen',
     )
