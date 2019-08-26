@@ -31,9 +31,6 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
 
 RealSenseBase::~RealSenseBase()
 {
-  // node_.release();
-  // node_.reset(nullptr);  
-  // pipeline_.stop();
 }
 
 void RealSenseBase::startPipeline()

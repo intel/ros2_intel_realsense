@@ -21,9 +21,10 @@ int main(int argc, char ** argv)
 
   auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>();
   
-  exec.add_node(realsense_node);
+  rclcpp::spin(realsense_node);
+  // exec.add_node(realsense_node);
   
-  exec.spin();
+  // exec.spin();
   rclcpp::shutdown();
   return 0;
 }
