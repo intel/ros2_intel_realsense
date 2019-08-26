@@ -2,6 +2,7 @@
   camera:
     ros__parameters:
       serial_no: 845412110563 # t265
+      #base_frame_id
       fisheye1:
         enabled: true
         resolution: [848,800]

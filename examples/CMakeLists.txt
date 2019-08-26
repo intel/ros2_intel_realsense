@@ -69,6 +69,8 @@ find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(realsense_ros REQUIRED)
 find_package(realsense_msgs REQUIRED)
 
@@ -81,6 +83,8 @@ ament_target_dependencies(one_cam
   nav_msgs
   sensor_msgs
   cv_bridge
+  tf2
+  tf2_ros
   realsense_ros
   realsense_msgs
 )
@@ -98,6 +102,8 @@ ament_target_dependencies(multi_cams
   nav_msgs
   sensor_msgs
   cv_bridge
+  tf2
+  tf2_ros
   realsense_ros
   realsense_msgs
 )

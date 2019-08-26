@@ -41,7 +41,6 @@ RealSenseD435::RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & n
     }
   }
   pointcloud_pub_ = node_.create_publisher<sensor_msgs::msg::PointCloud2>(POINTCLOUD_TOPIC, rclcpp::QoS(1));
-
   initialized_ = true;
 }
 
