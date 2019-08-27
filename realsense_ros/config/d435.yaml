@@ -4,6 +4,7 @@
       serial_no: 727212071015 # d435
       align_depth: true
       enable_pointcloud: true
+      #base_frame_id:
       color0:
         enabled: true
         resolution: [640,480]

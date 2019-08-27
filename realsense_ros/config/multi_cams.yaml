@@ -4,6 +4,7 @@
       serial_no: 727212071015 #d435
       align_depth: true
       enable_pointcloud: true
+      #base_frame_id:
       color0:
         enabled: true
         resolution: [640,480]
@@ -24,6 +25,7 @@
   camera:
     ros__parameters:
       serial_no: 845412110563  #t265
+      #base_frame_id:
       fisheye1:
         enabled: true
         resolution: [848,800]
