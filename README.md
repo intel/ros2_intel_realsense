@@ -1,5 +1,9 @@
-# ROS2 Wrapper for Intel&reg; RealSense&trade; Devices
-These are packages for using Intel RealSense cameras (D400 series) with ROS2.
+# ROS2 Package for Intel&reg; RealSense&trade; Devices
+## Supported Devices
+* D415
+* D435
+* D435i
+* T265
 
 ## Installation Instructions
 
@@ -25,21 +29,21 @@ The following instructions were verified with ROS2 Dashing on **Ubutnu 18.04**.
   sudo apt-get install -y libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev
   sudo apt-get install -y libglfw3-dev libgl1-mesa-dev libglu1-mesa-dev
   ```
-
+<!--
 ### Install ros2_intel_realsense binary packages
   ```
   sudo apt-get install ros-dashing-realsense-msgs ros-dashing-realsense-ros
   ```
-  The ros2_intel_realsense packages installation have been completed. You could jump to [Usage Instructions](https://github.com/intel/ros2_intel_realsense#usage-instructions) for executing, you could also install ros2_intel_realsense from source for more features. 
+  The ros2_intel_realsense packages installation have been completed. You could jump to [Usage Instructions](https://github.com/intel/ros2_intel_realsense#usage-instructions) for executing, you could also install ros2_intel_realsense from source for more features. -->
 
 ### Install ros2_intel_realsense from source
 ```bash
-#get code
+# fetch code
 mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/src
 git clone https://github.com/intel/ros2_intel_realsense.git
 git checkout refactor
-#build
+# build
 cd ~/ros2_ws
 source /opt/ros/dashing/setup.bash
 colcon build --symlink-install
@@ -54,15 +58,21 @@ To start the camera node in ROS2, plug in the camera, then type the following co
 source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 # To launch with "ros2 run", taking d435 for example:
-ros2 run realsense_examples one_cam __ns:=/d435 __params:=~/ros2_ws/src/ros2_intel_realsense/realsense_ros/config/d435.yaml
+cd ~/ros2_ws
+ros2 run realsense_node one_cam __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml
 # Or launch multiple cameras at one time, taking d435 and t265 for example:
-ros2 run realsense_examples multi_cams __params:=~/ros2_ws/src/ros2_intel_realsense/realsense_ros/config/multi_cams.yaml
+ros2 run realsense_node multi_cams __params:=src/ros2_intel_realsense/realsense_ros/config/multi_cams.yaml
 ```
-This will stream all camera sensors and publish on the appropriate ROS2 topics. PointCloud2 is enabled by default, till we provide ROS2 python launch options.
-
+### Dynamically reconfigure parameters
+Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.
+```
+ros2 param list
+ros2 param get <node_name> color0.enabled
+ros2 param set <node_name> color0.enabled true
+```
 ### Published Topics
 
-*  D435  
+*  D435 and D415
 
 [camera/color/image_raw](https://github.com/ros2/common_interfaces/blob/master/sensor_msgs/msg/Image.msg)
 
@@ -102,17 +112,9 @@ This will stream all camera sensors and publish on the appropriate ROS2 topics. 
 
 [camera/odom/sample](https://github.com/ros2/common_interfaces/blob/master/nav_msgs/msg/Odometry.msg)
 
-
-### Dynamically Reconfigure Parameters
-Currently only support reconfigure parameters by `ros2 param` in runtime, e.g.
-```
-ros2 param list
-ros2 param get <node_name> color0.enabled
-ros2 param set <node_name> color0.enabled true
-```
 ## Known Issues
 * If you want to launch T265 and D435 camera at one time, you have to launch T265 first due to HW constraits which will be fixed in a future release of [librealsense](https://github.com/IntelRealSense/librealsense).
-* Don't support launch node via launch file due to [issue#316](https://github.com/ros2/launch/issues/316) of launch package.
+* Don't support launch node via launch file due to [issue#316](https://github.com/ros2/launch/issues/316) of launch package. This issue has been fixed, but the fixing will be in next ROS2 release.
 * Don't support dynamic reconfigure parameters by rqt_reconfigure due to [issue#53](https://github.com/ros-visualization/rqt_reconfigure/issues/53) of rqt_reconfigure, but you still can reconfigure parameters by `ros2 param`.
 * We support Ubuntu Linux Bionic Beaver 18.04 on 64-bit, but not support Mac OS X 10.12 (Sierra) and Windows 10 yet.
 
@@ -120,6 +122,7 @@ ros2 param set <node_name> color0.enabled true
 * Add more tests
 * Support diagnostics
 * Support reconfigure parameters by GUI
+* Support launch multiple nodes in a single launch file
 
 ## License
 Copyright 2019 Intel Corporation
