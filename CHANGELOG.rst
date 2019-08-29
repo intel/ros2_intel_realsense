@@ -1,6 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for ros2_intel_realsense
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.0.4 (2019-08-30)
+* Support T265 and D435i
+* Support reconfigure parameters at runtime
+* Support the latest release(v2.26.0) of librealsense
+* Implement ROS2 realsense node as a component which can be loaded at runtime and adopt the advanced features in ROS2 dashing release, e.g. intra-process communication.
 
 2.0.3 (2018-12-11)
 ------------------
