@@ -38,6 +38,7 @@ namespace realsense
 
   const bool ALIGN_DEPTH = false;
   const bool ENABLE_POINTCLOUD = false;
+  const bool DEFAULT_ENABLE_STREAM = true;
 
   const std::vector<int> DEFAULT_IMAGE_RESOLUTION = {640, 480};
   const std::vector<int> FISHEYE_RESOLUTION = {848, 800};

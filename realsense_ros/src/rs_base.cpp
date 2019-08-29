@@ -62,7 +62,7 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
 {
   std::ostringstream os;
   os << STREAM_NAME.at(stream.first) << stream.second << ".enabled";
-  bool enable = node_.declare_parameter(os.str(), false);
+  bool enable = node_.declare_parameter(os.str(), DEFAULT_ENABLE_STREAM);
 
   if (stream == ACCEL || stream == GYRO) {
     imu_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr>

@@ -19,38 +19,19 @@ from launch_ros.descriptions import ComposableNode
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    t265_param = os.path.join(get_package_share_directory('realsense_ros'), 'config', 't265.yaml')
-    d435_param = os.path.join(get_package_share_directory('realsense_ros'), 'config', 'd435.yaml')
-    d435i_param = os.path.join(get_package_share_directory('realsense_ros'), 'config', 'd435i.yaml')
-    container = ComposableNodeContainer(
-            node_name='realsense_container',
+    d435_container = ComposableNodeContainer(
+            node_name='d435_container',
             node_namespace='',
             package='rclcpp_components',
             node_executable='component_container',
             composable_node_descriptions=[
-                # ComposableNode(
-                #     package='realsense_ros',
-                #     node_plugin='realsense::RealSenseNodeFactory',
-                #     node_namespace='/t265',
-                #     node_name='camera',
-                #     parameters=[t265_param,
-                #                 {'serial_no':'845412110563'}],),
-                # ComposableNode(
-                #     package='realsense_ros',
-                #     node_plugin='realsense::RealSenseNodeFactory',
-                #     node_namespace='/d435i',
-                #     node_name='camera',
-                #     parameters=[d435i_param,
-                #                 {'serial_no':'843112073259'}],),
                 ComposableNode(
                     package='realsense_ros',
                     node_plugin='realsense::RealSenseNodeFactory',
                     node_namespace='/d435',
                     node_name='camera',
-                    parameters=[d435_param,
-                                {'serial_no':'727212071015'}],),
+                    parameters= [{'serial_no':'727212071015'}]),
             ],
             output='screen',
     )
-
-    return launch.LaunchDescription([container])
+    return launch.LaunchDescription([d435_container])
