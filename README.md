@@ -7,20 +7,18 @@
 
 ## Installation Instructions
 
-The following instructions were verified with ROS2 Dashing on **Ubutnu 18.04**.
+The following instructions were verified with ROS2 Dashing on Ubutnu 18.04.
 
 ### Dependencies
 #### Install ROS2 packages [ros-dashing-desktop](https://index.ros.org/doc/ros2/Installation/Linux-Install-Debians/)
-  ```bash
-  sudo apt-get install ros-dashing-desktop
-  ```
+
 #### Install ROS2 dependences
   Currently, we support librealsense master branch.
   ```bash
   sudo apt-get install ros-dashing-cv-bridge ros-dashing-librealsense2 ros-dashing-message-filters ros-dashing-image-transport
   ```
-  * [cv_bridge](https://github.com/ros-perception/vision_opencv/tree/ros2/cv_bridge)
   * [Intel® RealSense™ SDK 2.0](https://github.com/IntelRealSense/librealsense.git)
+  * [cv_bridge](https://github.com/ros-perception/vision_opencv/tree/ros2/cv_bridge)
   * [ros2_message_filters](https://github.com/ros2/message_filters)
   * [ros2 image_transport](https://github.com/ros-perception/image_common/tree/ros2)
   
@@ -42,6 +40,7 @@ The following instructions were verified with ROS2 Dashing on **Ubutnu 18.04**.
 mkdir -p ~/ros2_ws/src
 cd ~/ros2_ws/src
 git clone https://github.com/intel/ros2_intel_realsense.git
+cd ros2_intel_realsense
 git checkout refactor
 # build
 cd ~/ros2_ws
@@ -52,8 +51,15 @@ colcon build --symlink-install
 ## Usage Instructions
 
 ### Start the camera node
-To start the camera node in ROS2, plug in the camera, then type the following command:
+Obtain the serial number of your device
+```bash
+rs-enumerate-devices
+```
+Change the corresponding yaml file with the specific serial number, e.g. for [d435.yaml](https://github.com/intel/ros2_intel_realsense/blob/refactor/realsense_ros/config/d435.yaml#L3) in line3:
+>serial_no: <serial_number_of_your_device> # d435
 
+
+To start the camera node in ROS2, plug in the camera, then type the following command:
 ```bash
 source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
@@ -63,7 +69,7 @@ ros2 run realsense_node one_cam __params:=src/ros2_intel_realsense/realsense_ros
 # Or launch multiple cameras at one time, taking d435 and t265 for example:
 ros2 run realsense_node multi_cams __params:=src/ros2_intel_realsense/realsense_ros/config/multi_cams.yaml
 ```
-### Dynamically reconfigure parameters
+### Configure Parameters at Runtime
 Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.
 ```
 ros2 param list
