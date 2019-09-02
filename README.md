@@ -69,18 +69,19 @@ ros2 run realsense_node one_cam __params:=src/ros2_intel_realsense/realsense_ros
 ros2 run realsense_node multi_cams __params:=src/ros2_intel_realsense/realsense_ros/config/multi_cams.yaml
 ```
 ### Configure Parameters at Runtime
-Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.
-#### Enable camera stream
+Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.  
+
+Enable camera stream
 ```
 ros2 param list
 ros2 param get <node_name> color0.enabled
 ros2 param set <node_name> color0.enabled true
 ```
-#### Enable aligned depth
+Enable aligned depth
 ```
 ros2 param set <node_name> align_depth true
 ```
-#### Enable pointcloud
+Enable pointcloud
 ```
 ros2 param set <node_name> enable_pointcloud true
 ```
