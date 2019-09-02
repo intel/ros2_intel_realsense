@@ -84,7 +84,7 @@ ros2 param set <node_name> align_depth true
 ```
 ros2 param set <node_name> enable_pointcloud true
 ```
-### Published Topics
+## Published Topics
 
 *  D435 and D415
 
@@ -168,7 +168,7 @@ ros2 param set <node_name> enable_pointcloud true
 * Don't support dynamic reconfigure parameters by rqt_reconfigure due to [issue#53](https://github.com/ros-visualization/rqt_reconfigure/issues/53) of rqt_reconfigure, but you still can reconfigure parameters by `ros2 param`.
 * We support Ubuntu Linux Bionic Beaver 18.04 on 64-bit, but not support Mac OS X 10.12 (Sierra) and Windows 10 yet.
 
-## ToDo
+## TODO
 * Add more tests
 * Merge sensor data from gyroscope and accelerator into one topic
 * Support diagnostics
