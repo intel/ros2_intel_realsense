@@ -1,7 +1,7 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for ros2_intel_realsense
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-2.0.4 (2019-08-30)
+2.0.5 (2019-08-30)
 ------------------
 * Support T265 and D435i
 * Support reconfigure parameters at runtime
