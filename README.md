@@ -1,6 +1,8 @@
 # ROS2 Wrapper for Intel&reg; RealSense&trade; Devices
 These are packages for using Intel RealSense cameras (D400 series) with ROS2.
 
+**Note: If you want T265 supported, please check out [this branch](https://github.com/intel/ros2_intel_realsense/tree/refactor)**
+
 ## Installation Instructions
 
 The following instructions were verified with ROS2 Dashing on **Ubutnu 18.04**.
