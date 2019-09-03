@@ -3,6 +3,7 @@ camera:
     serial_no: 727212071015 # d435
     align_depth: false
     enable_pointcloud: false
+    dense_pointcloud: true
     #base_frame_id:
     color0:
       enabled: true

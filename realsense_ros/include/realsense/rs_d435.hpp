@@ -35,12 +35,14 @@ public:
   virtual void publishTopicsCallback(const rs2::frame & frame) override;
   virtual Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
   void publishAlignedDepthTopic(const rs2::frame & frame, const rclcpp::Time & time);
-  void publishPointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time);
+  void publishSparsePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time);
+  void publishDensePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time);
   void updateStreamCalibData(const rs2::video_stream_profile & video_profile);
 
 protected:
   bool align_depth_;
   bool enable_pointcloud_;
+  bool dense_pc_;
   bool initialized_ = false;
   rs2::align align_to_color_ = rs2::align(RS2_STREAM_COLOR);
   rs2::pointcloud pc_;

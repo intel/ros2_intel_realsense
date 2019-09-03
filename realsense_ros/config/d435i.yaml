@@ -2,7 +2,8 @@ camera:
   ros__parameters:
     serial_no: 843112073259 # d435i
     align_depth: false
-    enable_pointcloud: false
+    enable_pointcloud: true
+    dense_pointcloud: true
     #base_frame_id:
     color0:
       enabled: true
