@@ -26,15 +26,15 @@ namespace realsense
 RealSenseT265::RealSenseT265(rs2::context ctx, rs2::device dev, rclcpp::Node & node)
 : RealSenseBase(ctx, dev, node)
 { 
-	for (auto & stream : STREAMS) {
+  for (auto & stream : STREAMS) {
     setupStream(stream);
   }
  //  if (enable_[ACCEL] == true) {
-	// 	linear_accel_cov_ = node_.declare_parameter("accel0.linear_acceleration_covariance", DEFAULT_LINEAR_ACCEL_COV);
-	// }
-	// if (enable_[GYRO] == true) {
-	// 	angular_velocity_cov_ = node_.declare_parameter("gyro0.angular_velocity_covariance", DEFAULT_ANGULAR_VELOCITY_COV);
-	// }
+  //   linear_accel_cov_ = node_.declare_parameter("accel0.linear_acceleration_covariance", DEFAULT_LINEAR_ACCEL_COV);
+  // }
+  // if (enable_[GYRO] == true) {
+  //   angular_velocity_cov_ = node_.declare_parameter("gyro0.angular_velocity_covariance", DEFAULT_ANGULAR_VELOCITY_COV);
+  // }
   linear_accel_cov_ = DEFAULT_LINEAR_ACCEL_COV;
   angular_velocity_cov_ = DEFAULT_ANGULAR_VELOCITY_COV;
   initialized_ = true;
@@ -42,10 +42,10 @@ RealSenseT265::RealSenseT265(rs2::context ctx, rs2::device dev, rclcpp::Node & n
 
 void RealSenseT265::publishTopicsCallback(const rs2::frame & frame)
 {
-	rclcpp::Time t = node_.now();
+  rclcpp::Time t = node_.now();
 
   if (frame.is<rs2::frameset>()) {
-  	auto frameset = frame.as<rs2::frameset>();
+    auto frameset = frame.as<rs2::frameset>();
     if (enable_[FISHEYE1] && (image_pub_[FISHEYE1]->get_subscription_count() > 0 || camera_info_pub_[FISHEYE1]->get_subscription_count() > 0)) {
       auto frame = frameset.get_fisheye_frame(1);
       publishImageTopic(frame, t);
@@ -55,13 +55,13 @@ void RealSenseT265::publishTopicsCallback(const rs2::frame & frame)
       publishImageTopic(frame, t);
     }
   } else if (frame.is<rs2::motion_frame>()) {
-  	if ((enable_[ACCEL] && (imu_pub_[ACCEL]->get_subscription_count() > 0 || imu_info_pub_[ACCEL]->get_subscription_count() > 0))
-  		|| (enable_[GYRO] && (imu_pub_[GYRO]->get_subscription_count() > 0 || imu_info_pub_[GYRO]->get_subscription_count() > 0))) {
-  		publishIMUTopic(frame, t);
-  	}
+    if ((enable_[ACCEL] && (imu_pub_[ACCEL]->get_subscription_count() > 0 || imu_info_pub_[ACCEL]->get_subscription_count() > 0))
+      || (enable_[GYRO] && (imu_pub_[GYRO]->get_subscription_count() > 0 || imu_info_pub_[GYRO]->get_subscription_count() > 0))) {
+      publishIMUTopic(frame, t);
+    }
   } else if (frame.is<rs2::pose_frame>()) {
-  	if (enable_[POSE] && odom_pub_->get_subscription_count() > 0) {
-    	publishPoseTopic(frame, t);
+    if (enable_[POSE] && odom_pub_->get_subscription_count() > 0) {
+      publishPoseTopic(frame, t);
     }
   }
 }
@@ -104,14 +104,14 @@ void RealSenseT265::publishIMUTopic(const rs2::frame & frame, const rclcpp::Time
   imu_msg.orientation.z = 0.0;
   imu_msg.orientation.w = 0.0;
   imu_msg.orientation_covariance = {-1.0, 0.0, 0.0,
-  	                                 0.0, 0.0, 0.0,
-  	                                 0.0, 0.0, 0.0};
+                                     0.0, 0.0, 0.0,
+                                     0.0, 0.0, 0.0};
   imu_msg.linear_acceleration_covariance = {linear_accel_cov_, 0.0, 0.0,
-  	                                        0.0, linear_accel_cov_, 0.0,
-  	                                        0.0, 0.0, linear_accel_cov_};
+                                            0.0, linear_accel_cov_, 0.0,
+                                            0.0, 0.0, linear_accel_cov_};
   imu_msg.angular_velocity_covariance = {angular_velocity_cov_, 0.0, 0.0,
-  	                                     0.0, angular_velocity_cov_, 0.0,
-  	                                     0.0, 0.0, angular_velocity_cov_};
+                                         0.0, angular_velocity_cov_, 0.0,
+                                         0.0, 0.0, angular_velocity_cov_};
 
   auto imu_data = m_frame.get_motion_data();
   if (type_index == GYRO) {
@@ -138,7 +138,7 @@ IMUInfo RealSenseT265::getIMUInfo(const rs2::frame & frame, const stream_index_p
   try {
     imu_intrinsics = m_profile.get_motion_intrinsics();
   } catch (const std::runtime_error &ex) {
-  	RCLCPP_INFO(node_.get_logger(), "No Motion Intrinsics available. Please calibrate it by rs-imu-calibration tool first.");
+    RCLCPP_INFO(node_.get_logger(), "No Motion Intrinsics available. Please calibrate it by rs-imu-calibration tool first.");
     imu_intrinsics = {{{1,0,0,0},
                        {0,1,0,0},
                        {0,0,1,0}}, {0,0,0}, {0,0,0}};
@@ -147,8 +147,8 @@ IMUInfo RealSenseT265::getIMUInfo(const rs2::frame & frame, const stream_index_p
   auto index = 0;
   info.header.frame_id = OPTICAL_FRAME_ID.at(stream_index);
   for (int i = 0; i < 3; ++i) {
-  	for (int j = 0; j < 4; ++j) {
-  		info.data[index] = imu_intrinsics.data[i][j];
+    for (int j = 0; j < 4; ++j) {
+      info.data[index] = imu_intrinsics.data[i][j];
       ++index;
     }
     info.noise_variances[i] =  imu_intrinsics.noise_variances[i];

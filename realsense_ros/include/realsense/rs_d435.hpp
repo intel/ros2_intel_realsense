@@ -30,8 +30,8 @@ namespace realsense
 class RealSenseD435 : public RealSenseBase
 {
 public:
-	RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & node);
-	virtual ~RealSenseD435() = default;
+  RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & node);
+  virtual ~RealSenseD435() = default;
   virtual void publishTopicsCallback(const rs2::frame & frame) override;
   virtual Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
   void publishAlignedDepthTopic(const rs2::frame & frame, const rclcpp::Time & time);

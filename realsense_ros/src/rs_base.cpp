@@ -24,7 +24,6 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   ctx_(ctx),
   dev_(dev)
 { 
-  base_frame_id_ = node_.declare_parameter("base_frame_id", DEFAULT_BASE_FRAME_ID);
   pipeline_ = rs2::pipeline(ctx_);
   static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node_);
   node_.set_on_parameters_set_callback(std::bind(&RealSenseBase::paramChangeCallback, this, std::placeholders::_1));
@@ -32,7 +31,7 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
 
 RealSenseBase::~RealSenseBase()
 {
-  pipeline_.stop();
+
 }
 
 void RealSenseBase::startPipeline()
@@ -62,7 +61,11 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
 {
   std::ostringstream os;
   os << STREAM_NAME.at(stream.first) << stream.second << ".enabled";
-  bool enable = node_.declare_parameter(os.str(), DEFAULT_ENABLE_STREAM);
+  bool enable;
+  if (node_.has_parameter(os.str()))
+    node_.get_parameter(os.str(), enable);
+  else
+    enable = node_.declare_parameter(os.str(), DEFAULT_ENABLE_STREAM);
 
   if (stream == ACCEL || stream == GYRO) {
     imu_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr>
@@ -85,19 +88,29 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
     if (stream == COLOR || stream == DEPTH || stream == INFRA1 || stream == INFRA2) {
       os.str("");
       os << STREAM_NAME.at(stream.first) << stream.second << ".resolution";
-      res = node_.declare_parameter(os.str(), rclcpp::ParameterValue(DEFAULT_IMAGE_RESOLUTION)).get<rclcpp::PARAMETER_INTEGER_ARRAY>();
-      os.str("");
+      if (node_.has_parameter(os.str()))
+        node_.get_parameter(os.str(), res);
+      else
+        res = node_.declare_parameter(os.str(), rclcpp::ParameterValue(DEFAULT_IMAGE_RESOLUTION)).get<rclcpp::PARAMETER_INTEGER_ARRAY>();      os.str("");
       os << STREAM_NAME.at(stream.first) << stream.second << ".fps";
-      fps = node_.declare_parameter(os.str(), DEFAULT_IMAGE_FPS);
-    } else if (stream == FISHEYE1 || stream == FISHEYE2) {
+      if (node_.has_parameter(os.str()))
+        node_.get_parameter(os.str(), fps);
+      else
+        fps = node_.declare_parameter(os.str(), DEFAULT_IMAGE_FPS);    } else if (stream == FISHEYE1 || stream == FISHEYE2) {
       auto param_desc = rcl_interfaces::msg::ParameterDescriptor();
       param_desc.read_only = true;
       os.str("");
       os << STREAM_NAME.at(stream.first) << stream.second << ".resolution";
-      res = node_.declare_parameter(os.str(), rclcpp::ParameterValue(FISHEYE_RESOLUTION), param_desc).get<rclcpp::PARAMETER_INTEGER_ARRAY>();
+      if (node_.has_parameter(os.str()))
+        node_.get_parameter(os.str(), res);
+      else
+        res = node_.declare_parameter(os.str(), rclcpp::ParameterValue(FISHEYE_RESOLUTION), param_desc).get<rclcpp::PARAMETER_INTEGER_ARRAY>();
       os.str("");
       os << STREAM_NAME.at(stream.first) << stream.second << ".fps";
-      fps = node_.declare_parameter(os.str(), DEFAULT_IMAGE_FPS, param_desc);
+      if (node_.has_parameter(os.str()))
+        node_.get_parameter(os.str(), fps);
+      else
+        fps = node_.declare_parameter(os.str(), DEFAULT_IMAGE_FPS, param_desc);
     }
 
     VideoStreamInfo info(static_cast<int>(res[0]), static_cast<int>(res[1]), fps);
@@ -203,6 +216,11 @@ void RealSenseBase::updateVideoStreamCalibData(const rs2::video_stream_profile &
 
 void RealSenseBase::publishStaticTransforms(const rs2::stream_profile & base_profile, const std::vector<rs2::stream_profile> & active_profiles)
 {
+  // Publish static transforms
+  if (node_.has_parameter("base_frame_id"))
+    node_.get_parameter("base_frame_id", base_frame_id_);
+  else
+    base_frame_id_ = node_.declare_parameter("base_frame_id", DEFAULT_BASE_FRAME_ID);
   for (auto & profile : active_profiles)
   {
     calculateTFAndPublish(profile, base_profile);

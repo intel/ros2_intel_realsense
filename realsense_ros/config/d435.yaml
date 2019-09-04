@@ -1,23 +1,24 @@
-camera:
-  ros__parameters:
-    serial_no: 727212071015 # d435
-    align_depth: false
-    enable_pointcloud: false
-    dense_pointcloud: true
-    #base_frame_id:
-    color0:
-      enabled: true
-      resolution: [640,480]
-      fps: 30
-    depth0:
-      enabled: true
-      resolution: [640,480]
-      fps: 30
-    infra1:
-      enabled: true
-      resolution: [640,480]
-      fps: 30
-    infra2:
-      enabled: true
-      resolution: [640,480]
-      fps: 30
+/d435:
+  camera:
+    ros__parameters:
+      serial_no: 819312071869 # d435
+      base_frame_id: d435_link
+      align_depth: false
+      enable_pointcloud: false
+      dense_pointcloud: true
+      color0:
+        enabled: true
+        resolution: [640,480]
+        fps: 30
+      depth0:
+        enabled: true
+        resolution: [640,480]
+        fps: 30
+      infra1:
+        enabled: true
+        resolution: [640,480]
+        fps: 30
+      infra2:
+        enabled: true
+        resolution: [640,480]
+        fps: 30

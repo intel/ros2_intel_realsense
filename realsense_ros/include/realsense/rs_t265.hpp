@@ -24,18 +24,18 @@ namespace realsense
 class RealSenseT265 : public RealSenseBase
 {
 public:
-	RealSenseT265(rs2::context ctx, rs2::device dev, rclcpp::Node & node);
-	virtual ~RealSenseT265() = default;
-	virtual void publishTopicsCallback(const rs2::frame & frame) override;
-	virtual Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
-	void publishIMUTopic(const rs2::frame & frame, const rclcpp::Time & time);
-	IMUInfo getIMUInfo(const rs2::frame & frame, const stream_index_pair & stream_index);
+  RealSenseT265(rs2::context ctx, rs2::device dev, rclcpp::Node & node);
+  virtual ~RealSenseT265() = default;
+  virtual void publishTopicsCallback(const rs2::frame & frame) override;
+  virtual Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
+  void publishIMUTopic(const rs2::frame & frame, const rclcpp::Time & time);
+  IMUInfo getIMUInfo(const rs2::frame & frame, const stream_index_pair & stream_index);
   void publishPoseTopic(const rs2::frame & frame, const rclcpp::Time & time);
 private:
-	const std::vector<stream_index_pair> STREAMS = {FISHEYE1, FISHEYE2, ACCEL, GYRO, POSE};
-	double linear_accel_cov_;
-	double angular_velocity_cov_;
-	bool initialized_ = false;
+  const std::vector<stream_index_pair> STREAMS = {FISHEYE1, FISHEYE2, ACCEL, GYRO, POSE};
+  double linear_accel_cov_;
+  double angular_velocity_cov_;
+  bool initialized_ = false;
 };
 }  // namespace realsense
 #endif // REALSENSE__RS_T265_HPP_
