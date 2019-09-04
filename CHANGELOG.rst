@@ -1,6 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for ros2_intel_realsense
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.0.6 (2019-09-03)
+------------------
+* support multi camera
+* support hot plugin and automatic reconnection
+
 2.0.5 (2019-08-30)
 ------------------
 * Support T265 and D435i

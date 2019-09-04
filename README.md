@@ -59,15 +59,39 @@ Change the corresponding yaml file with the specific serial number, e.g. for [d4
 
 
 To start the camera node in ROS2, plug in the camera, then type the following command:
+
+#### Single camera: launch with "ros2 run", taking d435 for example:
+
 ```bash
 source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
-# To launch with "ros2 run", taking d435 for example:
+
 cd ~/ros2_ws
-ros2 run realsense_node one_cam __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml
-# Or launch multiple cameras at one time, taking d435 and t265 for example:
-ros2 run realsense_node multi_cams __params:=src/ros2_intel_realsense/realsense_ros/config/multi_cams.yaml
+ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml __ns:=/d435
 ```
+
+#### Multi camera: launch with "ros2 run", taking d435 and t265 for example:
+
+* Terminal 1:
+
+```bash
+source /opt/ros/dashing/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+
+cd ~/ros2_ws
+ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml __ns:=/d435
+```
+
+* Terminal 2:
+
+```bash
+source /opt/ros/dashing/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+
+cd ~/ros2_ws
+ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/t265.yaml __ns:=/t265
+```
+
 ### Configure Parameters at Runtime
 Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.  
 
