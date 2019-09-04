@@ -4,7 +4,7 @@
       serial_no: 819312071869 # d435
       base_frame_id: d435_link
       align_depth: false
-      enable_pointcloud: false
+      enable_pointcloud: true
       dense_pointcloud: true
       color0:
         enabled: true

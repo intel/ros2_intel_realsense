@@ -91,7 +91,8 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
       if (node_.has_parameter(os.str()))
         node_.get_parameter(os.str(), res);
       else
-        res = node_.declare_parameter(os.str(), rclcpp::ParameterValue(DEFAULT_IMAGE_RESOLUTION)).get<rclcpp::PARAMETER_INTEGER_ARRAY>();      os.str("");
+        res = node_.declare_parameter(os.str(), rclcpp::ParameterValue(DEFAULT_IMAGE_RESOLUTION)).get<rclcpp::PARAMETER_INTEGER_ARRAY>();      
+      os.str("");
       os << STREAM_NAME.at(stream.first) << stream.second << ".fps";
       if (node_.has_parameter(os.str()))
         node_.get_parameter(os.str(), fps);
