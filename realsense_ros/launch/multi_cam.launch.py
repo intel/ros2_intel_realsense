@@ -33,6 +33,7 @@ def generate_launch_description():
             package='rviz2',
             node_executable='rviz2',
             node_name='rviz2',
+            output = 'screen',
             arguments=['-d', rviz_config_dir],
             parameters=[{'use_sim_time': 'false'}]),
         Node(
@@ -43,12 +44,11 @@ def generate_launch_description():
             parameters=[get_package_share_directory('realsense_ros')+'/config/t265.yaml'],
             remappings=[('/t265/camera/odom/sample', '/odom')],
             ),
-
         Node(
             package='realsense_node',
             node_executable='realsense_camera_node',
             node_namespace="/d435",
-            output='log',
+            output='screen',
             parameters=[get_package_share_directory('realsense_ros')+'/config/d435.yaml']
             ),
     ])
