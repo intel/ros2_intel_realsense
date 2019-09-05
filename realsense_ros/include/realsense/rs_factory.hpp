@@ -30,8 +30,8 @@ public:
   virtual ~RealSenseNodeFactory();
 private:
   void init();
-  void StartDevice();
-  void change_device_callback(rs2::event_information& info);
+  void startDevice();
+  void changeDeviceCallback(rs2::event_information& info);
   void getDevice(rs2::device_list & list);
   std::unique_ptr<RealSenseBase> rs_node_;
   rs2::context ctx;

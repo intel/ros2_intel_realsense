@@ -50,9 +50,9 @@ void RealSenseNodeFactory::init()
                   getDevice(dev_lst);
                   if (dev)
                   {
-                      std::function<void(rs2::event_information&)> change_device_callback_function = [this](rs2::event_information& info){change_device_callback(info);};
-                      ctx.set_devices_changed_callback(change_device_callback_function);
-                    StartDevice();
+                      std::function<void(rs2::event_information&)> changeDeviceCallback_function = [this](rs2::event_information& info){changeDeviceCallback(info);};
+                      ctx.set_devices_changed_callback(changeDeviceCallback_function);
+                    startDevice();
                   }
                   else
                   {
@@ -83,7 +83,7 @@ RealSenseNodeFactory::~RealSenseNodeFactory()
   }
 }
 
-void RealSenseNodeFactory::StartDevice()
+void RealSenseNodeFactory::startDevice()
 {
   std::string pid_str = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
   uint16_t pid = std::stoi(pid_str, 0, 16);
@@ -107,7 +107,7 @@ void RealSenseNodeFactory::StartDevice()
   rs_node_->startPipeline();
 }
 
-void RealSenseNodeFactory::change_device_callback(rs2::event_information& info)
+void RealSenseNodeFactory::changeDeviceCallback(rs2::event_information& info)
 {
   if (info.was_removed(dev))
   {
@@ -125,7 +125,7 @@ void RealSenseNodeFactory::change_device_callback(rs2::event_information& info)
       getDevice(new_devices);
       if (dev)
       {
-        StartDevice();
+        startDevice();
       }
     }
   }
