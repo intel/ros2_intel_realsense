@@ -92,6 +92,8 @@ cd ~/ros2_ws
 ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/t265.yaml __ns:=/t265
 ```
 
+***there are some sample launch file in ros2_intel_realsense/realsense_ros/launch/ for reference.***
+
 ### Configure Parameters at Runtime
 Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.  
 

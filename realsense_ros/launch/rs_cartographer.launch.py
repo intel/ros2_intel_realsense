@@ -1,4 +1,4 @@
-# Copyright 2019 Open Source Robotics Foundation, Inc.
+# Copyright (c) 2019 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import ThisLaunchFileDir
 
+
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     realsense_prefix = get_package_share_directory('realsense_ros')
@@ -41,21 +42,16 @@ def generate_launch_description():
             'cartographer_config_dir',
             default_value=cartographer_config_dir,
             description='Full path to config file to load'),
+
         DeclareLaunchArgument(
             'configuration_basename',
             default_value=configuration_basename,
             description='Name of lua file for cartographer'),
+
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
             description='Use simulation (Gazebo) clock if true'),
-
-        Node(
-            package='tf2_ros',
-            node_executable='static_transform_publisher',
-            output='screen',
-            arguments=['0', '0', '0.03', '0', '0', '0', 't265_link', 'd435_link']
-            ),
 
         Node(
             ## Configure the TF of the robot to the origin of the map coordinates
@@ -70,6 +66,7 @@ def generate_launch_description():
             node_executable='depthimage_to_laserscan_node',
             node_name='scan',
             output='screen',
+            parameters=[{'output_frame':'d435_link'}],
             remappings=[('depth','/d435/camera/depth/image_rect_raw'),
                         ('depth_camera_info', '/d435/camera/depth/camera_info')],
             ),
