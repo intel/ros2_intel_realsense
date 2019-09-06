@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# /* Author: Gary Liu */
 import os
 import launch
 from launch_ros.actions import ComposableNodeContainer
@@ -19,8 +20,8 @@ from launch_ros.descriptions import ComposableNode
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    t265_container = ComposableNodeContainer(
-            node_name='t265_container',
+    rgbd_container = ComposableNodeContainer(
+            node_name='rs_rgbd',
             node_namespace='',
             package='rclcpp_components',
             node_executable='component_container',
@@ -28,10 +29,9 @@ def generate_launch_description():
                 ComposableNode(
                     package='realsense_ros',
                     node_plugin='realsense::RealSenseNodeFactory',
-                    node_namespace='/t265',
-                    node_name='camera',
-                    parameters=[{'serial_no':'845412110563'}]),
+                    node_namespace='/',
+                    parameters= [{'serial_no':'819312071869'}]),
             ],
             output='screen',
     )
-    return launch.LaunchDescription([t265_container])
+    return launch.LaunchDescription([rgbd_container])

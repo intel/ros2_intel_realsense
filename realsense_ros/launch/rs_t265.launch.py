@@ -19,8 +19,8 @@ from launch_ros.descriptions import ComposableNode
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    d435i_container = ComposableNodeContainer(
-            node_name='d435_container',
+    t265_container = ComposableNodeContainer(
+            node_name='t265_container',
             node_namespace='',
             package='rclcpp_components',
             node_executable='component_container',
@@ -28,10 +28,10 @@ def generate_launch_description():
                 ComposableNode(
                     package='realsense_ros',
                     node_plugin='realsense::RealSenseNodeFactory',
-                    node_namespace='/d435i',
+                    node_namespace='/t265',
                     node_name='camera',
-                    parameters=[{'serial_no':'843112073259'}]),
+                    parameters=[{'serial_no':'845412111144'}]),
             ],
             output='screen',
     )
-    return launch.LaunchDescription([d435i_container])
+    return launch.LaunchDescription([t265_container])

@@ -31,14 +31,13 @@ public:
 private:
   void init();
   void startDevice();
-  void changeDeviceCallback(rs2::event_information& info);
+  void changeDeviceCallback(rs2::event_information & info);
   void getDevice(rs2::device_list & list);
   std::unique_ptr<RealSenseBase> rs_node_;
-  rs2::context ctx;
-  rs2::device dev;
+  rs2::context ctx_;
+  rs2::device dev_;
   std::string serial_no_;
-  rclcpp::Logger logger_;
-  std::thread _query_thread;
+  std::thread query_thread_;
 };
 }  // namespace realsense
 
