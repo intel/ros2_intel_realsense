@@ -329,7 +329,6 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
 
     sensor_msgs::PointCloud2Modifier modifier(*pc_msg);
     modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
-    modifier.resize(pc_msg->width);
 
     sensor_msgs::PointCloud2Iterator<float> iter_x(*pc_msg, "x");
     sensor_msgs::PointCloud2Iterator<float> iter_y(*pc_msg, "y");
@@ -372,7 +371,6 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
 
     sensor_msgs::PointCloud2Modifier modifier(*pc_msg);
     modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
-    modifier.resize(pc_msg->width);
 
     sensor_msgs::PointCloud2Iterator<float> iter_x(*pc_msg, "x");
     sensor_msgs::PointCloud2Iterator<float> iter_y(*pc_msg, "y");
