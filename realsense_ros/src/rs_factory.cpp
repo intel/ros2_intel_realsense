@@ -35,8 +35,7 @@ RealSenseNodeFactory::RealSenseNodeFactory(const std::string & node_name, const 
 
 RealSenseNodeFactory::~RealSenseNodeFactory()
 {
-  for(rs2::sensor sensor : dev_.query_sensors())
-  {
+  for(rs2::sensor sensor : dev_.query_sensors()) {
     sensor.stop();
     sensor.close();
   }

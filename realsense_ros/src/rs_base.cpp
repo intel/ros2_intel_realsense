@@ -37,11 +37,6 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
 
 RealSenseBase::~RealSenseBase()
 {
-  // for(rs2::sensor sensor : dev_.query_sensors())
-  // {
-  //   sensor.stop();
-  //   sensor.close();
-  // }
 }
 
 void RealSenseBase::startPipeline()
