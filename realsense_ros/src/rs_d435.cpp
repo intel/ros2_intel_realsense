@@ -364,8 +364,8 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
     //
     pc_msg->header.stamp = time;
     pc_msg->header.frame_id = DEFAULT_COLOR_OPTICAL_FRAME_ID;
-    pc_msg->width = color_frame.get_width() * color_frame.get_height();
-    pc_msg->height = 1;
+    pc_msg->width = color_frame.get_width();
+    pc_msg->height =  color_frame.get_height();
     pc_msg->point_step = 3 * sizeof(float) + 3 * sizeof(uint8_t);
     pc_msg->row_step = pc_msg->point_step * pc_msg->width;
     pc_msg->is_dense = true;
