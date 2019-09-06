@@ -384,7 +384,7 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
     int channel_num = color_frame.get_bytes_per_pixel();
     uint8_t * color_data = (uint8_t*)color_frame.get_data();
 
-    for (size_t pnt_idx = 0; pnt_idx < pc_msg->width; pnt_idx++) {
+    for (size_t pnt_idx = 0; pnt_idx < pnt_idx < pc_msg->width*pc_msg->height; pnt_idx++) {
       *iter_x = vertex[pnt_idx].z;
       *iter_y = -vertex[pnt_idx].x;
       *iter_z = -vertex[pnt_idx].y;
