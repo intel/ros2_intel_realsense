@@ -60,17 +60,20 @@ Change the corresponding yaml file with the specific serial number, e.g. for [d4
 
 To start the camera node in ROS2, plug in the camera, then type the following command:
 
-#### Single camera: launch with "ros2 run", taking d435 for example:
+#### Single camera, taking d435 for example:
 
 ```bash
 source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
+## using ros2 run
 cd ~/ros2_ws
 ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml __ns:=/d435
+## using ros2 launch
+ros2 launch realsense_examples rs_camera.launch.py
 ```
 
-#### Multi camera: launch with "ros2 run", taking d435 and t265 for example:
+#### Multi camera, taking d435 and t265 for example:
 
 * Terminal 1:
 
@@ -79,7 +82,7 @@ source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
-ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml __ns:=/d435
+ros2 run realsense_node realsense_camera_node __params:=./src/ros2_intel_realsense/realsense_ros/config/d435.yaml __ns:=/d435
 ```
 
 * Terminal 2:
@@ -89,10 +92,32 @@ source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
-ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/t265.yaml __ns:=/t265
+ros2 run realsense_node realsense_camera_node __params:=./src/ros2_intel_realsense/realsense_ros/config/t265.yaml __ns:=/t265
 ```
 
-***there are some sample launch file in ros2_intel_realsense/realsense_ros/launch/ for reference.***
+* Or using ros2 launch :
+
+```bash
+source /opt/ros/dashing/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+
+cd ~/ros2_ws
+## before launch all the cameras, serial number should be set in the launch file
+ros2 launch realsense_examples rs_multiple_devices.launch.py
+```
+
+#### Multi camera with tf(transform), taking d435 and t265 for example:
+
+```bash
+source /opt/ros/dashing/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+
+cd ~/ros2_ws
+## before launch all the cameras, serial number should be set in the launch file
+ros2 launch realsense_examples rs_t265_and_d400.launch.py
+```
+
+***for more usage of these launch files in ros2_intel_realsense/realsense_examples/launch, please refer to our [robot devkit](https://inte.github.io/robot_devkit) project, includes SLAM and navigation etc.***
 
 ### Configure Parameters at Runtime
 Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.  

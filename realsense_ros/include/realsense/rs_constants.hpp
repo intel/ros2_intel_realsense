@@ -36,8 +36,8 @@ namespace realsense
   const stream_index_pair ACCEL{RS2_STREAM_ACCEL, 0};
   const stream_index_pair POSE{RS2_STREAM_POSE, 0};
 
-  const bool ALIGN_DEPTH = false;
-  const bool ENABLE_POINTCLOUD = false;
+  const bool ALIGN_DEPTH = true;
+  const bool ENABLE_POINTCLOUD = true;
   const bool DENSE_PC = true;
   const bool DEFAULT_ENABLE_STREAM = true;
 
