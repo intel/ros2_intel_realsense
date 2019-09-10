@@ -22,7 +22,7 @@ def generate_launch_description():
             parameters=[{'use_sim_time': 'false'}]),
         Node(
             package='realsense_node',
-            node_executable='realsense_camera_node',
+            node_executable='realsense_node',
             node_namespace="/t265",
             output='screen',
             parameters=[get_package_share_directory('realsense_ros')+'/config/t265.yaml'],
@@ -31,7 +31,7 @@ def generate_launch_description():
 
         Node(
             package='realsense_node',
-            node_executable='realsense_camera_node',
+            node_executable='realsense_node',
             node_namespace="/d435",
             output='screen',
             parameters=[get_package_share_directory('realsense_ros')+'/config/d435.yaml']

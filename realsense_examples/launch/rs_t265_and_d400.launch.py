@@ -53,7 +53,7 @@ def generate_launch_description():
             )
     t265_node = Node(
         package='realsense_node',
-        node_executable='realsense_camera_node',
+        node_executable='realsense_node',
         node_namespace="/t265",
         output='screen',
         remappings=[('/t265/camera/odom/sample','/odom')],
@@ -62,7 +62,7 @@ def generate_launch_description():
         )
     rgbd_node = Node(
         package='realsense_node',
-        node_executable='realsense_camera_node',
+        node_executable='realsense_node',
         node_namespace="/d435",
         output='screen',
         parameters=[{'serial_no':rgbd_serial_no, 

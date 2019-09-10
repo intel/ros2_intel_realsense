@@ -74,11 +74,11 @@ find_package(tf2_ros REQUIRED)
 find_package(realsense_ros REQUIRED)
 find_package(realsense_msgs REQUIRED)
 
-add_executable(realsense_camera_node
-  src/realsense_camera_node.cpp
+add_executable(realsense_node
+  src/realsense_node.cpp
 )
 
-ament_target_dependencies(realsense_camera_node
+ament_target_dependencies(realsense_node
   rclcpp
   nav_msgs
   sensor_msgs
@@ -89,7 +89,7 @@ ament_target_dependencies(realsense_camera_node
   realsense_msgs
 )
 
-install(TARGETS realsense_camera_node
+install(TARGETS realsense_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
