@@ -45,8 +45,12 @@ void RealSenseNodeFactory::init()
 {
   auto param_desc = rcl_interfaces::msg::ParameterDescriptor();
   param_desc.read_only = true;
-  auto param_value = declare_parameter("serial_no", rclcpp::ParameterValue(), param_desc);
-  serial_no_ = std::to_string(param_value.get<rclcpp::PARAMETER_INTEGER>());
+  auto param_value = declare_parameter("serial_no");
+  if (param_value.get_type() == rclcpp::PARAMETER_NOT_SET) {
+    RCLCPP_INFO(this->get_logger(), "Device's serial number is not set, enabling the default device!");
+  } else {
+    serial_no_ = std::to_string(param_value.get<rclcpp::PARAMETER_INTEGER>());
+  }
   try {
     query_thread_ = std::thread([=]()
               {

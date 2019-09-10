@@ -60,17 +60,20 @@ Change the corresponding yaml file with the specific serial number, e.g. for [d4
 
 To start the camera node in ROS2, plug in the camera, then type the following command:
 
-#### Single camera: launch with "ros2 run", taking d435 for example:
+#### Single camera, taking d435 for example:
 
 ```bash
 source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
+## using ros2 run
 cd ~/ros2_ws
-ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml __ns:=/d435
+ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_examples`/share/realsense_ros/config/d435.yaml __ns:=/d435
+## using ros2 launch
+ros2 launch realsense_examples rs_camera.launch.py
 ```
 
-#### Multi camera: launch with "ros2 run", taking d435 and t265 for example:
+#### Multi camera, taking d435 and t265 for example:
 
 * Terminal 1:
 
@@ -79,7 +82,7 @@ source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
-ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/d435.yaml __ns:=/d435
+ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_examples`/share/realsense_ros/config/d435.yaml __ns:=/d435
 ```
 
 * Terminal 2:
@@ -89,28 +92,56 @@ source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
-ros2 run realsense_node realsense_camera_node __params:=src/ros2_intel_realsense/realsense_ros/config/t265.yaml __ns:=/t265
+ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_examples`/share/realsense_ros/config/t265.yaml __ns:=/t265
 ```
 
-***there are some sample launch file in ros2_intel_realsense/realsense_ros/launch/ for reference.***
+* Or using ros2 launch :
+
+```bash
+source /opt/ros/dashing/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+
+cd ~/ros2_ws
+## before launch all the cameras, serial number should be set in the launch file
+ros2 launch realsense_examples rs_multiple_devices.launch.py
+```
+
+#### Multi camera with tf(transform), taking d435 and t265 for example:
+
+```bash
+source /opt/ros/dashing/setup.bash
+source ~/ros2_ws/install/local_setup.bash
+
+cd ~/ros2_ws
+## before launch all the cameras, serial number should be set in the launch file
+ros2 launch realsense_examples rs_t265_and_d400.launch.py
+```
+
+***for more usage of these launch files in realsense_examples/launch, please refer to our [robot devkit](https://inte.github.io/robot_devkit) project, includes SLAM and navigation etc.***
 
 ### Configure Parameters at Runtime
 Currently only support reconfigure parameters by `ros2 param` at runtime, e.g.  
 
 Enable camera stream
-```
+
+```bash
 ros2 param list
 ros2 param get <node_name> color0.enabled
 ros2 param set <node_name> color0.enabled true
 ```
+
 Enable aligned depth
-```
+
+```bash
 ros2 param set <node_name> align_depth true
 ```
+
 Enable pointcloud
-```
+
+```bash
 ros2 param set <node_name> enable_pointcloud true
 ```
+
 ## Published Topics
 
 *  D435 and D415
@@ -190,19 +221,19 @@ ros2 param set <node_name> enable_pointcloud true
 [camera/odom/sample](https://github.com/ros2/common_interfaces/blob/master/nav_msgs/msg/Odometry.msg)
 
 ## Known Issues
-* If you want to launch T265 and D435 camera at one time, you have to launch T265 first due to HW constraits which will be fixed in a future release of [librealsense](https://github.com/IntelRealSense/librealsense).[issue#4672](https://github.com/IntelRealSense/librealsense/issues/4672)
-* Don't support launch node via launch file due to [issue#316](https://github.com/ros2/launch/issues/316) of launch package. This issue has been fixed, but the fixing will be in next ROS2 release.
+
 * Don't support dynamic reconfigure parameters by rqt_reconfigure due to [issue#53](https://github.com/ros-visualization/rqt_reconfigure/issues/53) of rqt_reconfigure, but you still can reconfigure parameters by `ros2 param`.
 * We support Ubuntu Linux Bionic Beaver 18.04 on 64-bit, but not support Mac OS X 10.12 (Sierra) and Windows 10 yet.
 
 ## TODO
+
 * Add more tests
 * Merge sensor data from gyroscope and accelerator into one topic
 * Support diagnostics
 * Support reconfigure parameters by GUI
-* Support launch multiple nodes in a single launch file
 
 ## License
+
 Copyright 2019 Intel Corporation
 
 Licensed under the Apache License, Version 2.0 (the "License");

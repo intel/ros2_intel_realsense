@@ -15,23 +15,16 @@
 # /* Author: Gary Liu */
 import os
 import launch
+from launch_ros.actions import Node
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    rgbd_container = ComposableNodeContainer(
-            node_name='rs_rgbd',
-            node_namespace='',
-            package='rclcpp_components',
-            node_executable='component_container',
-            composable_node_descriptions=[
-                ComposableNode(
-                    package='realsense_ros',
-                    node_plugin='realsense::RealSenseNodeFactory',
-                    node_namespace='/',
-                    parameters= [{'serial_no':'819312071869'}]),
-            ],
-            output='screen',
-    )
-    return launch.LaunchDescription([rgbd_container])
+    rgbd_node = Node(
+        package='realsense_node',
+        node_executable='realsense_node',
+        node_namespace='',
+        output='screen',
+        )
+    return launch.LaunchDescription([rgbd_node])

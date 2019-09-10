@@ -1,0 +1,1 @@
+Sample launch files for using realsense_ros, Please refer to our [robot devkit](https://intel.github.io/robot_devkit) home page for details.
