@@ -82,7 +82,7 @@ source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
-ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_examples`/share/realsense_ros/config/d435.yaml __ns:=/d435
+ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_examples`/share/realsense_examples/config/d435.yaml __ns:=/d435
 ```
 
 * Terminal 2:
@@ -92,7 +92,7 @@ source /opt/ros/dashing/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
-ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_examples`/share/realsense_ros/config/t265.yaml __ns:=/t265
+ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_examples`/share/realsense_examples/config/t265.yaml __ns:=/t265
 ```
 
 * Or using ros2 launch :
