@@ -27,7 +27,7 @@ from launch.substitutions import ThisLaunchFileDir
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
-    realsense_prefix = get_package_share_directory('realsense_ros')
+    realsense_prefix = get_package_share_directory('realsense_examples')
     cartographer_config_dir = LaunchConfiguration('cartographer_config_dir', 
                                                     default=os.path.join(realsense_prefix, 'config'))
     configuration_basename = LaunchConfiguration('configuration_basename', default='rs_cartographer.lua')

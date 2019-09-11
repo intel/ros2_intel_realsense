@@ -39,7 +39,11 @@ def generate_launch_description():
             get_package_share_directory('turtlebot3_bringup'),
             'param',
             TURTLEBOT3_MODEL + '.yaml'))
-
+    robot_state_publisher_dir = LaunchConfiguration(
+        'turtlebot3 state publisher dir',
+        default=os.path.join(
+            get_package_share_directory('turtlebot3_bringup'),
+            'launch'))
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
 
     return LaunchDescription([
@@ -60,7 +64,7 @@ def generate_launch_description():
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                [ThisLaunchFileDir(), '/turtlebot3_state_publisher.launch.py']),
+                [robot_state_publisher_dir, '/turtlebot3_state_publisher.launch.py']),
             launch_arguments={'use_sim_time': use_sim_time}.items(),
         ),
 

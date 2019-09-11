@@ -35,7 +35,7 @@ def generate_launch_description():
     rgbd_base_frame_id = LaunchConfiguration('base_frame_id', default='d435_link')
     rgbd_serial_no = LaunchConfiguration('serial_no', default='819312071869')
 
-    rviz_config_dir = os.path.join(get_package_share_directory('realsense_ros'), 'config', 'rs_cartographer.rviz')
+    rviz_config_dir = os.path.join(get_package_share_directory('realsense_examples'), 'config', 'rs_cartographer.rviz')
 
     rviz_node = Node(
             package='rviz2',
