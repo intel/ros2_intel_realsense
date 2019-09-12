@@ -36,7 +36,7 @@ public:
   virtual Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
   void publishAlignedDepthTopic(const rs2::frame & frame, const rclcpp::Time & time);
   void publishSparsePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time);
-  void publishDensePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time);
+  void publishDensePointCloud(const rs2::video_frame & depth_frame, const rs2::video_frame & color_frame, const rclcpp::Time & time);
   void updateStreamCalibData(const rs2::video_stream_profile & video_profile);
 
 protected:
