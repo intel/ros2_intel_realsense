@@ -77,19 +77,22 @@ void RealSenseD435::publishTopicsCallback(const rs2::frame & frame)
     auto frame = frameset.get_infrared_frame(2);
     publishImageTopic(frame, t);
   }
-  if (align_depth_ && (aligned_depth_image_pub_->get_subscription_count() > 0 || aligned_depth_info_pub_->get_subscription_count() > 0)) {
+   if ((enable_pointcloud_ && pointcloud_pub_->get_subscription_count() > 0) || 
+      (align_depth_ && (aligned_depth_image_pub_->get_subscription_count() > 0 || 
+       aligned_depth_info_pub_->get_subscription_count() > 0))) {
     auto aligned_frameset = align_to_color_.process(frameset);
     auto depth = aligned_frameset.get_depth_frame();
-    publishAlignedDepthTopic(depth, t);
-  }
-  if (enable_pointcloud_ && pointcloud_pub_->get_subscription_count() > 0) {
-    auto color_frame = frameset.get_color_frame();
-    pc_.map_to(color_frame);
-    points_ = pc_.calculate(frameset.get_depth_frame());
-    if (dense_pc_ == true) {
-      publishDensePointCloud(points_, color_frame, t);
-    } else {
-      publishSparsePointCloud(points_, color_frame, t);
+    if (aligned_depth_image_pub_->get_subscription_count() > 0 || aligned_depth_info_pub_->get_subscription_count() > 0) {
+      publishAlignedDepthTopic(depth, t);
+    }
+    if (pointcloud_pub_->get_subscription_count() > 0) {
+      auto color_frame = frameset.get_color_frame();
+      points_ = pc_.calculate(depth);
+      if (dense_pc_ == true) {
+        publishDensePointCloud(points_, color_frame, t);
+      } else {
+        publishSparsePointCloud(points_, color_frame, t);
+      }
     }
   }
 }
