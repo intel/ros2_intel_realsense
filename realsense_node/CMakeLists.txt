@@ -91,6 +91,9 @@ ament_target_dependencies(realsense_node
 
 install(TARGETS realsense_node
   DESTINATION lib/${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 if(BUILD_TESTING)
