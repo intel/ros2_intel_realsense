@@ -51,7 +51,11 @@ void RealSenseBase::startPipeline()
 
   if (enable_[DEPTH] == true) {
     auto base_profile = p_profile.get_stream(RS2_STREAM_DEPTH, 0);
-    publishStaticTransforms(base_profile, active_profiles);
+    auto pub_tf = [this, base_profile, active_profiles]() -> void {
+      this->publishStaticTransforms(base_profile, active_profiles);
+    };
+
+    timer_ = node_.create_wall_timer(std::chrono::seconds(1), pub_tf);
   } else if (enable_[POSE] == true) {
     auto base_profile = p_profile.get_stream(RS2_STREAM_POSE, 0);
     publishStaticTransforms(base_profile, active_profiles);
@@ -270,7 +274,7 @@ void RealSenseBase::composeTFMsgAndPublish(const rclcpp::Time & t, const Float3 
                                            const std::string & to)
 {
   geometry_msgs::msg::TransformStamped msg;
-  RCLCPP_INFO(node_.get_logger(), "Publish Static TF from %s to %s", from.c_str(), to.c_str());
+  RCLCPP_DEBUG(node_.get_logger(), "Publish Static TF from %s to %s", from.c_str(), to.c_str());
   msg.header.stamp = t;
   msg.header.frame_id = from;
   msg.child_frame_id = to;
