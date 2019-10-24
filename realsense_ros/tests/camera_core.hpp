@@ -55,8 +55,8 @@ int g_depth_height_exp = 480;
 int g_depth_width_exp = 640;
 int g_infrared1_height_exp = 480;
 int g_infrared1_width_exp = 640;
-int g_fisheye1_height_exp = 480;
-int g_fisheye1_width_exp = 640;
+int g_fisheye1_height_exp = 800;
+int g_fisheye1_width_exp = 848;
 
 uint32_t g_depth_step_exp;
 uint32_t g_color_step_exp;
@@ -112,7 +112,6 @@ double g_fisheye2_caminfo_D_recv[5] = {0.0};
 double g_caminfo_rotation_recv[STREAM_COUNT][9] = {{0.0}};
 double g_caminfo_projection_recv[STREAM_COUNT][12] = {{0.0}};
 
-rs2::context ctx_;
 std::string g_dmodel_recv[STREAM_COUNT];
 std::string camera_type;
 

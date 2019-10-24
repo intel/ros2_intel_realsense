@@ -19,37 +19,31 @@
 #include <vector>
 #include <chrono>
 
-#include "rclcpp/exceptions.hpp"
-#include "rclcpp/node.hpp"
-#include "rclcpp/rclcpp.hpp"
-
-#include "opencv2/opencv.hpp"
 #include "realsense/rs_factory.hpp"
-#include "realsense/rs_d435.hpp"
-#include "realsense/rs_d435i.hpp"
-#include "realsense/rs_t265.hpp"
 
 TEST(UnitTestFunction, testLibraryFunctions)
-{
+{  
+  rclcpp::WallRate loop_rate(1);
+  
   ASSERT_NO_THROW({
     auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>();
+    rclcpp::spin_some(realsense_node);
+    loop_rate.sleep();
   });
 }
 
 TEST(UnitTestFunction, testLibraryIncorrectInputs)
 {
-  try 
-  {
-    auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>("ZR300", "0");
-  }
-  catch (...)
-  {
-    SUCCEED();
-  }
+  ASSERT_THROW({
+      auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>("ZR300", "0");
+    }, rclcpp::exceptions::InvalidNamespaceError);
 }
 
-int main(int argc, char * argv[])
+int main(int argc, char ** argv)
 {
+  rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return ret;
 }

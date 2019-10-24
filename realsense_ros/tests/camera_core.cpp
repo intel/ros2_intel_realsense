@@ -28,6 +28,8 @@
 
 void getCameraType()
 {
+
+  rs2::context ctx_;
   auto device_list = ctx_.query_devices();
   rs2::device_list & list = device_list;
   if (0 == list.size()) {
@@ -258,23 +260,32 @@ void imageFisheye2Callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, 
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
 
-  double infrared2_total = 0.0;
-  int infrared2_count = 0;
-  cv::Scalar mean = cv::mean(frame);
-  for (auto val : mean.val) {
-    infrared2_total += val;
-    infrared2_count += 1;
+  uchar *fisheye2_data = frame.data;
+  double fisheye2_total = 0.0;
+  int fisheye2_count = 1;
+  for (unsigned int i = 0; i < msg->height * msg->width; i++)
+  {
+    if (*fisheye2_data > 0 && *fisheye2_data < 255)
+    {
+      fisheye2_total += *fisheye2_data;
+      fisheye2_count++;
+    }
+    fisheye2_data++;
+  }
+  if (fisheye2_count != 0)
+  {
+    g_fisheye2_avg = static_cast<float>(fisheye2_total / fisheye2_count);
   }
 
-  if (infrared2_count > 0) {
-    g_infrared2_avg = infrared2_total / infrared2_count;
-  }
+  getMsgInfo(RS2_STREAM_FISHEYE, msg);
+  getCameraInfo(RS2_STREAM_FISHEYE, info_msg);
 
   for (unsigned int i = 0; i < 5; i++)
   {
-    g_fisheye2_caminfo_D_recv[1] = info_msg->d[i];
+    g_fisheye2_caminfo_D_recv[i] = info_msg->d[i];
   }
-  g_infrared2_recv = true;
+
+  g_fisheye2_recv = true;
 }
 void imageAlignDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
 {
@@ -649,7 +660,7 @@ TEST(RealsenseTests, testFisheye1CameraInfo)
   {
     EXPECT_EQ(g_width_recv[RS2_STREAM_FISHEYE], g_caminfo_width_recv[RS2_STREAM_FISHEYE]);
     EXPECT_EQ(g_height_recv[RS2_STREAM_FISHEYE], g_caminfo_height_recv[RS2_STREAM_FISHEYE]);
-    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_FISHEYE].c_str(), "distortion_ftheta");
+    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_FISHEYE].c_str(), "plumb_bob");
 
     // verify rotation is equal to identity matrix
     for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++)
@@ -754,8 +765,8 @@ int main(int argc, char * argv[])
   auto sub_pointcloud = node->create_subscription<sensor_msgs::msg::PointCloud2>("camera/pointcloud", rclcpp::QoS(1), pcCallback);
   auto sub_accel = node->create_subscription<sensor_msgs::msg::Imu>("/camera/accel/sample", rclcpp::QoS(1), accelCallback);
   auto sub_gyro = node->create_subscription<sensor_msgs::msg::Imu>("/camera/gyro/sample", rclcpp::QoS(1), gyroCallback);
-  auto fisheye1_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye1/image_rect_raw", imageFisheye1Callback, "raw", custom_qos);
-  auto fisheye2_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye2/image_rect_raw", imageFisheye2Callback, "raw", custom_qos);
+  auto fisheye1_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye1/image_raw", imageFisheye1Callback, "raw", custom_qos);
+  auto fisheye2_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye2/image_raw", imageFisheye2Callback, "raw", custom_qos);
 
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node);

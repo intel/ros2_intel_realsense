@@ -35,10 +35,7 @@ RealSenseNodeFactory::RealSenseNodeFactory(const std::string & node_name, const 
 
 RealSenseNodeFactory::~RealSenseNodeFactory()
 {
-  for(rs2::sensor sensor : dev_.query_sensors()) {
-    sensor.stop();
-    sensor.close();
-  }
+  query_thread_.detach();
 }
 
 void RealSenseNodeFactory::init()
@@ -105,7 +102,7 @@ void RealSenseNodeFactory::changeDeviceCallback(rs2::event_information& info)
   if (info.was_removed(dev_)) {
     RCLCPP_ERROR(this->get_logger(), "The device has been disconnected!");
     rs_node_.release();
-    rs_node_.reset(nullptr);
+    // rs_node_.reset(nullptr);
     dev_ = rs2::device();
   }
   if (!dev_) {
