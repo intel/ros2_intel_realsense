@@ -178,7 +178,7 @@ public:
     setupPublishers();
     setupStreams();
     rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
-    publishStaticTransforms();
+    timer_ = this->create_wall_timer(std::chrono::seconds(1), std::bind(&RealSenseCameraNode::publishStaticTransforms, this));
     RCLCPP_INFO(logger_, "RealSense Node Is Up!");
   }
 
@@ -783,7 +783,7 @@ private:
 
   void publishStaticTransforms()
   {
-    RCLCPP_INFO(logger_, "publishStaticTransforms...");
+    RCLCPP_DEBUG(logger_, "publishStaticTransforms...");
     // Publish transforms for the cameras
     tf2::Quaternion q_c2co;
     geometry_msgs::msg::TransformStamped b2c_msg;         // Base to Color
@@ -1376,6 +1376,7 @@ private:
 
   rclcpp::Time _ros_time_base;
   rclcpp::Logger logger_ = rclcpp::get_logger("RealSenseCameraNode");
+  rclcpp::TimerBase::SharedPtr timer_;
   bool _sync_frames;
   bool _pointcloud;
   bool _align_pointcloud;
