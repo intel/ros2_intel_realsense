@@ -102,7 +102,7 @@ protected:
   std::string base_frame_id_;
 
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
-
+  rclcpp::TimerBase::SharedPtr timer_;
   std::map<stream_index_pair, bool> enable_ = {{COLOR, false}, {DEPTH, false},
                                                {INFRA1, false}, {INFRA2, false},
                                                {ACCEL, false}, {GYRO, false},
