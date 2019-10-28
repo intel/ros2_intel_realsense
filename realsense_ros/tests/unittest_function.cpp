@@ -29,21 +29,25 @@ TEST(UnitTestFunction, testLibraryFunctions)
     auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>();
     rclcpp::spin_some(realsense_node);
     loop_rate.sleep();
+    rclcpp::shutdown();
   });
 }
 
 TEST(UnitTestFunction, testLibraryIncorrectInputs)
 {
-  ASSERT_THROW({
-      auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>("ZR300", "0");
-    }, rclcpp::exceptions::InvalidNamespaceError);
+  try
+  {
+    auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>("ZR300", "0");
+  }
+  catch (...) 
+  {
+    SUCCEED();
+  }
 }
 
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
   testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  rclcpp::shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }
