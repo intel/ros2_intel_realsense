@@ -133,6 +133,18 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(rclcpp REQUIRED)
+  find_package(rclcpp_components REQUIRED)
+  find_package(nav_msgs REQUIRED)
+  find_package(sensor_msgs REQUIRED)
+  find_package(cv_bridge REQUIRED)
+  find_package(tf2 REQUIRED)
+  find_package(tf2_ros REQUIRED)
+  find_package(pcl_conversions REQUIRED)
+  find_package(realsense_msgs)
+  find_package(realsense2)
+  find_package(image_transport REQUIRED)
+
   # the following line skips the linter which checks for copyrights
   # uncomment the line when a copyright and license is not present in all source files
   #set(ament_cmake_copyright_FOUND TRUE)
@@ -140,6 +152,37 @@ if(BUILD_TESTING)
   # uncomment the line when this package is not in a git repo
   #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+
+  macro(custom_gtest target)
+    ament_add_gtest(${target} ${ARGN})
+    if(TARGET ${target})
+      target_include_directories(${target} PUBLIC
+        ${${PROJECT_NAME}_INCLUDE_DIRS}
+      )
+      target_link_libraries(${target}
+        realsense2
+	${PROJECT_NAME})
+      ament_target_dependencies(${target}
+        "rclcpp"
+        "rclcpp_componets"
+        "nav_msgs"
+        "sensor_msgs"
+        "cv_bridge"
+        "tf2"
+	"tf2_ros"
+        "pcl_conversions"
+        "realsense_msgs"
+        "realsense2"
+        "image_transport")
+    endif()
+  endmacro()
+
+  custom_gtest(unittest_function
+    "tests/unittest_function.cpp"
+    TIMEOUT 300)
+  custom_gtest(camera_core
+    "tests/camera_core.cpp"
+    TIMEOUT 300)
 endif()
 
 ament_export_include_directories(include)

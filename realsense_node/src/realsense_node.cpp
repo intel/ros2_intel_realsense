@@ -17,13 +17,8 @@
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::executors::SingleThreadedExecutor exec;
-
   auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>();
-  
-  exec.add_node(realsense_node);
-  
-  exec.spin();
+  rclcpp::spin(realsense_node);
   rclcpp::shutdown();
   return 0;
 }

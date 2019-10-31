@@ -93,6 +93,10 @@ install(TARGETS realsense_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(TARGETS realsense_node
+  RUNTIME DESTINATION bin
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
