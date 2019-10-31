@@ -19,7 +19,7 @@ from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
-    rviz_config_dir = os.path.join(get_package_share_directory('realsense_examples'), 'config', 'demo_camera.rviz')
+    rviz_config_dir = os.path.join(get_package_share_directory('realsense_examples'), 'config', 'demo_rgbd.rviz')
     rviz_node = Node(
         package='rviz2',
         node_executable='rviz2',

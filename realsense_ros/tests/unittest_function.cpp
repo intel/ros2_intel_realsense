@@ -23,7 +23,7 @@
 
 TEST(UnitTestFunction, testLibraryFunctions)
 {  
-  rclcpp::WallRate loop_rate(2);
+  rclcpp::WallRate loop_rate(0.5);
   
   ASSERT_NO_THROW({
     auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>();
