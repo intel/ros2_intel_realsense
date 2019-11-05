@@ -30,10 +30,10 @@ from launch_ros.descriptions import ComposableNode
 def generate_launch_description():
     # config the serial number and base frame id of each camera
     t265_base_frame_id = LaunchConfiguration('base_frame_id', default='t265_link')
-    t265_serial_no = LaunchConfiguration('serial_no', default='845412111144')
+    t265_serial_no = LaunchConfiguration('serial_no', default='845412110563')
 
     rgbd_base_frame_id = LaunchConfiguration('base_frame_id', default='d435_link')
-    rgbd_serial_no = LaunchConfiguration('serial_no', default='819312071869')
+    rgbd_serial_no = LaunchConfiguration('serial_no', default='841612070383')
 
     rviz_config_dir = os.path.join(get_package_share_directory('realsense_examples'), 'config', 'rs_cartographer.rviz')
 
@@ -68,6 +68,6 @@ def generate_launch_description():
         parameters=[{'serial_no':rgbd_serial_no, 
                 'base_frame_id': rgbd_base_frame_id,
                 'enable_pointcloud':'true',
-                'dense_pointcloud' : 'false'}]
+                'dense_pointcloud' : 'true'}]
         )
     return launch.LaunchDescription([rviz_node, tf_node, t265_node, rgbd_node])
