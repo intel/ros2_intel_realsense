@@ -239,9 +239,9 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
 
     for (size_t index = 0; index < valid_indices.size(); index++) {
       auto pnt_idx = valid_indices[index];
-      *iter_x = vertex[pnt_idx].z;
-      *iter_y = -vertex[pnt_idx].x;
-      *iter_z = -vertex[pnt_idx].y;
+      *iter_x = vertex[pnt_idx].x;
+      *iter_y = vertex[pnt_idx].y;
+      *iter_z = vertex[pnt_idx].z;
 
       float i = color_point[pnt_idx].u;
       float j = color_point[pnt_idx].v;
@@ -290,10 +290,9 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
 
     for (size_t index = 0; index < valid_indices.size(); index++) {
       auto pnt_idx = valid_indices[index];
-      *iter_x = vertex[pnt_idx].z;
-      *iter_y = -vertex[pnt_idx].x;
-      *iter_z = -vertex[pnt_idx].y;
-
+      *iter_x = vertex[pnt_idx].x;
+      *iter_y = vertex[pnt_idx].y;
+      *iter_z = vertex[pnt_idx].z;
       float i = color_point[pnt_idx].u;
       float j = color_point[pnt_idx].v;
       int pixx = static_cast<int>(i * width);
@@ -344,9 +343,9 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
     uint8_t * color_data = (uint8_t*)color_frame.get_data();
 
     for (size_t pnt_idx = 0; pnt_idx < pc_msg->width*pc_msg->height; pnt_idx++) {
-        *iter_x = vertex[pnt_idx].z;
-        *iter_y = -vertex[pnt_idx].x;
-        *iter_z = -vertex[pnt_idx].y;
+        *iter_x = vertex[pnt_idx].x;
+        *iter_y = vertex[pnt_idx].y;
+        *iter_z = vertex[pnt_idx].z;
 
         *iter_r = color_data[pnt_idx*channel_num];
         *iter_g = color_data[pnt_idx*channel_num+1];
@@ -386,9 +385,9 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
     uint8_t * color_data = (uint8_t*)color_frame.get_data();
 
     for (size_t pnt_idx = 0; pnt_idx < pc_msg->width*pc_msg->height; pnt_idx++) {
-      *iter_x = vertex[pnt_idx].z;
-      *iter_y = -vertex[pnt_idx].x;
-      *iter_z = -vertex[pnt_idx].y;
+      *iter_x = vertex[pnt_idx].x;
+      *iter_y = vertex[pnt_idx].y;
+      *iter_z = vertex[pnt_idx].z;
 
       *iter_r = color_data[pnt_idx*channel_num];
       *iter_g = color_data[pnt_idx*channel_num+1];

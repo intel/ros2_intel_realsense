@@ -259,6 +259,7 @@ void RealSenseBase::calculateTFAndPublish(const rs2::stream_profile & stream_in,
   Q = quaternion_optical * Q * quaternion_optical.inverse();
 
   Float3 translation{ex.translation[0], ex.translation[1], ex.translation[2]};
+  Float3 zero_trans{0, 0, 0};
   auto type = stream_in.stream_type();
   auto index = stream_in.stream_index();
   auto type_index = std::pair<rs2_stream, int>(type, index);
@@ -266,7 +267,7 @@ void RealSenseBase::calculateTFAndPublish(const rs2::stream_profile & stream_in,
     Q = Q.inverse();
     composeTFMsgAndPublish(transform_ts, translation, Q, OPTICAL_FRAME_ID.at(type_index), base_frame_id_);
   } else {
-    composeTFMsgAndPublish(transform_ts, translation, Q, base_frame_id_, OPTICAL_FRAME_ID.at(type_index));
+    composeTFMsgAndPublish(transform_ts, translation, quaternion_optical, base_frame_id_, OPTICAL_FRAME_ID.at(type_index));
   }
 }
 
