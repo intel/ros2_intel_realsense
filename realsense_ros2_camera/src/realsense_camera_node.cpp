@@ -286,9 +286,15 @@ private:
         exit(1);
       }
 
-      // Take the first device in the list.
-      // Add an ability to get the specific device to work with from outside.
-      _dev = list.front();
+      for (auto&& dev:list){
+        auto sn = dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+        if (_serial_no.empty() || sn == _serial_no){
+          _dev = dev;
+          _serial_no = sn;
+          break;
+        }
+      }
+
       _ctx->set_devices_changed_callback([this](rs2::event_information & info)
         {
           if (info.was_removed(_dev)) {
