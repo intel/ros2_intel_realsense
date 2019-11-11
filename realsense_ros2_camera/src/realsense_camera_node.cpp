@@ -842,8 +842,8 @@ private:
       b2c_msg.header.frame_id = _base_frame_id;
       b2c_msg.child_frame_id = _frame_id[COLOR];
       b2c_msg.transform.translation.x = _depth2color_extrinsics.translation[2];
-      b2c_msg.transform.translation.y = -_depth2color_extrinsics.translation[0];
-      b2c_msg.transform.translation.z = -_depth2color_extrinsics.translation[1];
+      b2c_msg.transform.translation.y = _depth2color_extrinsics.translation[0];
+      b2c_msg.transform.translation.z = _depth2color_extrinsics.translation[1];
       b2c_msg.transform.rotation.x = q.x();
       b2c_msg.transform.rotation.y = q.y();
       b2c_msg.transform.rotation.z = q.z();
@@ -881,8 +881,8 @@ private:
         b2ir1_msg.header.frame_id = _base_frame_id;
         b2ir1_msg.child_frame_id = _frame_id[INFRA1];
         b2ir1_msg.transform.translation.x = d2ir1_extrinsics.translation[2];
-        b2ir1_msg.transform.translation.y = -d2ir1_extrinsics.translation[0];
-        b2ir1_msg.transform.translation.z = -d2ir1_extrinsics.translation[1];
+        b2ir1_msg.transform.translation.y = d2ir1_extrinsics.translation[0];
+        b2ir1_msg.transform.translation.z = d2ir1_extrinsics.translation[1];
 
         b2ir1_msg.transform.rotation.x = q.x();
         b2ir1_msg.transform.rotation.y = q.y();
@@ -914,8 +914,8 @@ private:
         b2ir2_msg.header.frame_id = _base_frame_id;
         b2ir2_msg.child_frame_id = _frame_id[INFRA2];
         b2ir2_msg.transform.translation.x = d2ir2_extrinsics.translation[2];
-        b2ir2_msg.transform.translation.y = -d2ir2_extrinsics.translation[0];
-        b2ir2_msg.transform.translation.z = -d2ir2_extrinsics.translation[1];
+        b2ir2_msg.transform.translation.y = d2ir2_extrinsics.translation[0];
+        b2ir2_msg.transform.translation.z = d2ir2_extrinsics.translation[1];
         b2ir2_msg.transform.rotation.x = q.x();
         b2ir2_msg.transform.rotation.y = q.y();
         b2ir2_msg.transform.rotation.z = q.z();
