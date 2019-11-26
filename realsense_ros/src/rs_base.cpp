@@ -259,7 +259,6 @@ void RealSenseBase::calculateTFAndPublish(const rs2::stream_profile & stream_in,
   Q = quaternion_optical * Q * quaternion_optical.inverse();
 
   Float3 translation{ex.translation[0], ex.translation[1], ex.translation[2]};
-  Float3 zero_trans{0, 0, 0};
   auto type = stream_in.stream_type();
   auto index = stream_in.stream_index();
   auto type_index = std::pair<rs2_stream, int>(type, index);
