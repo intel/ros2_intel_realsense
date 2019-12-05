@@ -14,9 +14,9 @@ RUN vcs import src < underlay.repos
 ENV OVERLAY_WS /opt/overlay_ws
 RUN mkdir -p $OVERLAY_WS/src
 WORKDIR $OVERLAY_WS
-# COPY ./ src/navigation2
-COPY ./tools/overlay.repos ./
-RUN vcs import src < overlay.repos
+COPY ./ src/navigation2
+# COPY ./tools/overlay.repos ./
+# RUN vcs import src < overlay.repos
 
 # copy manifests for caching
 WORKDIR /opt

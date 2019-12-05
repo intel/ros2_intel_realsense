@@ -73,6 +73,11 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(realsense_ros REQUIRED)
 find_package(realsense_msgs REQUIRED)
+find_package(realsense2 REQUIRED)
+
+include_directories(
+  ${realsense2_INCLUDE_DIR}
+)
 
 add_executable(realsense_node
   src/realsense_node.cpp

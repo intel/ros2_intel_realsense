@@ -108,7 +108,7 @@ ament_target_dependencies(${PROJECT_NAME}
   tf2
   tf2_ros
   pcl_conversions
-  librealsense2
+  realsense2
   realsense_msgs
 )
 
