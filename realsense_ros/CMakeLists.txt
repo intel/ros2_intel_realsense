@@ -82,7 +82,7 @@ endif()
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${realsense2_INCLUDE_DIRS}
+  ${realsense2_INCLUDE_DIR}
 )
 
 set(node_plugins "")
