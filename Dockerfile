@@ -1,13 +1,22 @@
-ARG FROM_IMAGE=ruffsl/librealsense:development
+ARG FROM_IMAGE=ros:eloquent
 
 # multi-stage for caching
 FROM $FROM_IMAGE AS cache
 
+# clone underlay source
+ENV UNDERLAY_WS /opt/underlay_ws
+RUN mkdir -p $UNDERLAY_WS/src
+WORKDIR $UNDERLAY_WS
+COPY ./tools/underlay.repos ./
+RUN vcs import src < underlay.repos
+
 # copy overlay source
-ENV REALSENSE_WS /opt/realsense_ws
-RUN mkdir -p $REALSENSE_WS/src
-WORKDIR $REALSENSE_WS
-COPY ./ src/ros2_intel_realsense
+ENV OVERLAY_WS /opt/overlay_ws
+RUN mkdir -p $OVERLAY_WS/src
+WORKDIR $OVERLAY_WS
+# COPY ./ src/navigation2
+COPY ./tools/overlay.repos ./
+RUN vcs import src < overlay.repos
 
 # copy manifests for caching
 WORKDIR /opt
@@ -25,33 +34,55 @@ RUN apt-get update && apt-get install -q -y \
       lcov \
     && rm -rf /var/lib/apt/lists/*
 
+# copy underlay manifests
+ENV UNDERLAY_WS /opt/underlay_ws
+COPY --from=cache /tmp/underlay_ws $UNDERLAY_WS
+WORKDIR $UNDERLAY_WS
+
+# install underlay dependencies
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    apt-get update && rosdep install -q -y \
+      --from-paths src \
+      --ignore-src \
+    && rm -rf /var/lib/apt/lists/*
+
+# copy underlay source
+COPY --from=cache $UNDERLAY_WS ./
+
+# build underlay source
+ARG UNDERLAY_MIXINS="release ccache"
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
+    colcon build \
+      --symlink-install \
+      --mixin \
+        $UNDERLAY_MIXINS
+
 # copy overlay manifests
-ENV REALSENSE_WS /opt/realsense_ws
-COPY --from=cache /tmp/realsense_ws $REALSENSE_WS
-WORKDIR $REALSENSE_WS
+ENV OVERLAY_WS /opt/overlay_ws
+COPY --from=cache /tmp/overlay_ws $OVERLAY_WS
+WORKDIR $OVERLAY_WS
 
 # install overlay dependencies
-RUN . $OVERLAY_WS/install/setup.sh && \
+RUN . $UNDERLAY_WS/install/setup.sh && \
     apt-get update && rosdep install -q -y \
       --from-paths \
         src \
-        $OVERLAY_WS/src \
+        $UNDERLAY_WS/src \
       --ignore-src \
     && rm -rf /var/lib/apt/lists/*
 
 # copy overlay source
-COPY --from=cache $REALSENSE_WS ./
+COPY --from=cache $OVERLAY_WS ./
 
 # build overlay source
-ARG REALSENSE_MIXINS="release ccache"
-RUN . $OVERLAY_WS/install/setup.sh && \
+ARG OVERLAY_MIXINS="release ccache"
+RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon build \
       --symlink-install \
       --mixin \
-        $REALSENSE_MIXINS \
-      --event-handlers console_direct+
+        $OVERLAY_MIXINS
 
 # source overlay from entrypoint
 RUN sed --in-place \
-      's|^source .*|source "$REALSENSE_WS/install/setup.bash"|' \
+      's|^source .*|source "$OVERLAY_WS/install/setup.bash"|' \
       /ros_entrypoint.sh

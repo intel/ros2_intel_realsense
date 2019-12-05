@@ -1,0 +1,5 @@
+repositories:
+  ros2_intel_realsense:
+    type: git
+    url: https://github.com/intel/ros2_intel_realsense.git
+    version: master
