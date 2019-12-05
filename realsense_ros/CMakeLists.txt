@@ -96,7 +96,7 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME}
-  realsense2
+  ${realsense2_LIBRARY}
 )
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -108,7 +108,7 @@ ament_target_dependencies(${PROJECT_NAME}
   tf2
   tf2_ros
   pcl_conversions
-  realsense2
+  librealsense2
   realsense_msgs
 )
 
@@ -159,7 +159,7 @@ if(BUILD_TESTING)
         ${${PROJECT_NAME}_INCLUDE_DIRS}
       )
       target_link_libraries(${target}
-        realsense2
+        ${realsense2_LIBRARY}
 	${PROJECT_NAME})
       ament_target_dependencies(${target}
         "rclcpp"
