@@ -17,7 +17,7 @@
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>pcl_conversions</depend>
-  <depend>realsense2</depend>
+  <depend>librealsense2</depend>
   <depend>realsense_msgs</depend>
   <depend>image_transport</depend>
 
