@@ -38,6 +38,19 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
 RealSenseBase::~RealSenseBase()
 {
   pipeline_.stop();
+  if (work_thread_.joinable()) {
+      work_thread_.join();
+  }
+}
+
+void RealSenseBase::startWorkThread() 
+{
+  work_thread_ = std::thread([=]() {
+    while (true) {
+      rs2::frame frame = frame_data.wait_for_frame();
+      publishTopicsCallback(frame);
+    }
+  });
 }
 
 void RealSenseBase::startPipeline()
@@ -64,7 +77,9 @@ void RealSenseBase::startPipeline()
     RCLCPP_WARN(node_.get_logger(), "No TF is available. Enable base stream (Depth or Pose) first.");
   }
 
-  pipeline_.start(cfg_, std::bind(&RealSenseBase::publishTopicsCallback, this, std::placeholders::_1));
+  frame_data = rs2::frame_queue(50);
+  pipeline_.start(cfg_, frame_data);
+  startWorkThread();
 }
 
 void RealSenseBase::setupStream(const stream_index_pair & stream)
