@@ -75,7 +75,7 @@ public:
   void printSupportedStreamProfiles();
   void printActiveStreamProfiles();
   void printStreamProfiles(const std::vector<rs2::stream_profile> & profile_list);
-
+  void startWorkThread();
 protected:
   Result toggleStream(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeResolution(const stream_index_pair & stream, const rclcpp::Parameter & param);
@@ -100,7 +100,8 @@ protected:
   rs2::pipeline pipeline_;
   rs2::config cfg_;
   std::string base_frame_id_;
-
+  rs2::frame_queue frame_data;
+  std::thread work_thread_;
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
   rclcpp::TimerBase::SharedPtr timer_;
   std::map<stream_index_pair, bool> enable_ = {{COLOR, false}, {DEPTH, false},
