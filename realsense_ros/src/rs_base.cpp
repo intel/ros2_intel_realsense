@@ -77,7 +77,7 @@ void RealSenseBase::startPipeline()
     RCLCPP_WARN(node_.get_logger(), "No TF is available. Enable base stream (Depth or Pose) first.");
   }
 
-  frame_data = rs2::frame_queue(50);
+  frame_data = rs2::frame_queue(5);
   pipeline_.start(cfg_, frame_data);
   startWorkThread();
 }
