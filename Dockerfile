@@ -54,8 +54,7 @@ ARG UNDERLAY_MIXINS="release ccache"
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && \
     colcon build \
       --symlink-install \
-      --mixin \
-        $UNDERLAY_MIXINS
+      --mixin $UNDERLAY_MIXINS
 
 # copy overlay manifests
 ENV OVERLAY_WS /opt/overlay_ws
@@ -79,8 +78,7 @@ ARG OVERLAY_MIXINS="release ccache"
 RUN . $UNDERLAY_WS/install/setup.sh && \
     colcon build \
       --symlink-install \
-      --mixin \
-        $OVERLAY_MIXINS
+      --mixin $OVERLAY_MIXINS
 
 # source overlay from entrypoint
 RUN sed --in-place \
