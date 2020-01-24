@@ -15,7 +15,6 @@
 #ifndef REALSENSE__RS_BASE_HPP_
 #define REALSENSE__RS_BASE_HPP_
 
-#include "rcl/time.h"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"

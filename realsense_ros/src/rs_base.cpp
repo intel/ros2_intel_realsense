@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include "rcl/time.h"
 #include "realsense/rs_base.hpp"
 
 namespace realsense
