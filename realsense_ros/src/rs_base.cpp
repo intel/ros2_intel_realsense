@@ -457,4 +457,8 @@ Result RealSenseBase::changeFPS(const stream_index_pair & stream, const rclcpp::
   }
   return result;
 }
+
+rclcpp::Time RealSenseBase::frameToTime(const rs2::frame & frame) {
+  return rclcpp::Time(RCL_MS_TO_NS(frame.get_timestamp()));
+}
 }  // namespace realsense
