@@ -1,5 +1,5 @@
 repositories:
-  librealsense:
+  intel/librealsense:
     type: git
     url: https://github.com/ruffsl/librealsense.git
     version: docker
