@@ -65,6 +65,7 @@ set(CMAKE_CXX_FLAGS "-fPIE -fPIC -D_FORTIFY_SOURCE=2 -fstack-protector -Wformat 
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rcl REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -82,7 +83,7 @@ endif()
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${realsense2_INCLUDE_DIRS}
+  ${realsense2_INCLUDE_DIR}
 )
 
 set(node_plugins "")
@@ -96,10 +97,11 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME}
-  realsense2
+  ${realsense2_LIBRARY}
 )
 
 ament_target_dependencies(${PROJECT_NAME}
+  rcl
   rclcpp
   rclcpp_components
   nav_msgs
@@ -133,6 +135,7 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+  find_package(rcl REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(nav_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
@@ -159,9 +162,10 @@ if(BUILD_TESTING)
         ${${PROJECT_NAME}_INCLUDE_DIRS}
       )
       target_link_libraries(${target}
-        realsense2
+        ${realsense2_LIBRARY}
 	${PROJECT_NAME})
       ament_target_dependencies(${target}
+        "rcl"
         "rclcpp"
         "nav_msgs"
         "sensor_msgs"

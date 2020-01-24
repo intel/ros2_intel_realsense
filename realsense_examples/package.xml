@@ -14,7 +14,7 @@
 
   <depend>realsense_ros</depend>
   <depend>realsense_node</depend>
-  <depend>realsense2</depend>
+  <depend>librealsense2</depend>
   <depend>realsense_msgs</depend>
 
   <exec_depend>launch_ros</exec_depend>
