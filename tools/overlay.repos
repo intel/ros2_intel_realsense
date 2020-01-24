@@ -1,5 +1,5 @@
 repositories:
-  ros2_intel_realsense:
+  intel/ros2_intel_realsense:
     type: git
     url: https://github.com/ruffsl/ros2_intel_realsense.git
     version: docker
