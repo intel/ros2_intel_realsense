@@ -42,7 +42,7 @@ RealSenseT265::RealSenseT265(rs2::context ctx, rs2::device dev, rclcpp::Node & n
 
 void RealSenseT265::publishTopicsCallback(const rs2::frame & frame)
 {
-  rclcpp::Time t = node_.now();
+  rclcpp::Time t = frameToTime(frame);
 
   if (frame.is<rs2::frameset>()) {
     auto frameset = frame.as<rs2::frameset>();

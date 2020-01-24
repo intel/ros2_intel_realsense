@@ -35,7 +35,7 @@ RealSenseD435I::RealSenseD435I(rs2::context ctx, rs2::device dev, rclcpp::Node &
 
 void RealSenseD435I::publishTopicsCallback(const rs2::frame & frame)
 {
-  rclcpp::Time t = node_.now();
+  rclcpp::Time t = frameToTime(frame);
   if (frame.is<rs2::frameset>()) {
     RealSenseD435::publishTopicsCallback(frame);
   } else if (frame.is<rs2::motion_frame>()) {

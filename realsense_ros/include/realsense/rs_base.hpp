@@ -15,6 +15,7 @@
 #ifndef REALSENSE__RS_BASE_HPP_
 #define REALSENSE__RS_BASE_HPP_
 
+#include "rcl/time.h"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
@@ -80,6 +81,7 @@ protected:
   Result toggleStream(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeResolution(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeFPS(const stream_index_pair & stream, const rclcpp::Parameter & param);
+  rclcpp::Time frameToTime(const rs2::frame & frame);
 
   typedef struct VideoStreamInfo
   {
