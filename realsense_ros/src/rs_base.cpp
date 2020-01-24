@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include "rcl/time.h"
 #include "realsense/rs_base.hpp"
 
 namespace realsense
@@ -456,5 +457,9 @@ Result RealSenseBase::changeFPS(const stream_index_pair & stream, const rclcpp::
     result.reason = "Unsupported configuration.";
   }
   return result;
+}
+
+rclcpp::Time RealSenseBase::frameToTime(const rs2::frame & frame) {
+  return rclcpp::Time(RCL_MS_TO_NS(frame.get_timestamp()));
 }
 }  // namespace realsense
