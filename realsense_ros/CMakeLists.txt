@@ -100,8 +100,11 @@ target_link_libraries(${PROJECT_NAME}
   realsense2
 )
 
+target_include_directories(${PROJECT_NAME} PRIVATE
+  ${rcl_INCLUDE_DIRS}
+)
+
 ament_target_dependencies(${PROJECT_NAME}
-  rcl
   rclcpp
   rclcpp_components
   nav_msgs
@@ -164,8 +167,9 @@ if(BUILD_TESTING)
       target_link_libraries(${target}
         realsense2
 	${PROJECT_NAME})
+      target_include_directories(${PROJECT_NAME} PRIVATE
+        ${rcl_INCLUDE_DIRS})
       ament_target_dependencies(${target}
-        "rcl"
         "rclcpp"
         "nav_msgs"
         "sensor_msgs"
