@@ -58,6 +58,8 @@ Result RealSenseD435I::paramChangeCallback(const std::vector<rclcpp::Parameter> 
         result = toggleStream(ACCEL, param);
       } else if (param_name == "gyro0.enabled") {
         result = toggleStream(GYRO, param);
+      } else if (param_name == "imu0.enabled") {
+        result = toggleStream(IMU, param);
       }
     }
   }
