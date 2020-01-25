@@ -95,14 +95,16 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
     enable = node_.declare_parameter(os.str(), DEFAULT_ENABLE_STREAM);
   }
 
-  if (stream == ACCEL || stream == GYRO) {
+  if (stream == ACCEL || stream == GYRO || stream == IMU) {
     imu_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr>
       (stream, node_.create_publisher<sensor_msgs::msg::Imu>(SAMPLE_TOPIC.at(stream), rclcpp::QoS(1))));
     imu_info_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<realsense_msgs::msg::IMUInfo>::SharedPtr>
       (stream, node_.create_publisher<realsense_msgs::msg::IMUInfo>(INFO_TOPIC.at(stream), rclcpp::QoS(1))));
     if (enable == true) {
       enable_[stream] = true;
-      cfg_.enable_stream(stream.first, stream.second);
+      if (stream != IMU) {
+        cfg_.enable_stream(stream.first, stream.second);
+      }
     }
   } else if (stream == POSE) {
     odom_pub_ = node_.create_publisher<nav_msgs::msg::Odometry>(SAMPLE_TOPIC.at(stream), rclcpp::QoS(1));
