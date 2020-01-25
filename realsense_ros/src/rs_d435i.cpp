@@ -131,4 +131,109 @@ IMUInfo RealSenseD435I::getIMUInfo(const rs2::frame & frame, const stream_index_
   }
   return info;
 }
+
+sensor_msgs::msg::Imu RealSenseD435I::CreateUnitedMessage(const CimuData accel_data, const CimuData gyro_data)
+{
+  sensor_msgs::msg::Imu imu_msg;
+  rclcpp::Time t = msToTime(gyro_data.m_time);
+  imu_msg.header.stamp = t;
+
+  imu_msg.angular_velocity.x = gyro_data.m_data.x();
+  imu_msg.angular_velocity.y = gyro_data.m_data.y();
+  imu_msg.angular_velocity.z = gyro_data.m_data.z();
+
+  imu_msg.linear_acceleration.x = accel_data.m_data.x();
+  imu_msg.linear_acceleration.y = accel_data.m_data.y();
+  imu_msg.linear_acceleration.z = accel_data.m_data.z();
+  return imu_msg;
+}
+
+void RealSenseD435I::FillImuData_Copy(const CimuData imu_data, std::deque<sensor_msgs::msg::Imu>& imu_msgs)
+{
+  stream_index_pair type(imu_data.m_type);
+
+  static CimuData _accel_data(ACCEL, {0,0,0}, -1.0);
+  if (ACCEL == type)
+  {
+    _accel_data = imu_data;
+    return;
+  }
+  if (_accel_data.m_time < 0)
+    return;
+
+  imu_msgs.push_back(CreateUnitedMessage(_accel_data, imu_data));
+}
+
+void RealSenseD435I::ImuMessage_AddDefaultValues(sensor_msgs::msg::Imu& imu_msg)
+{
+//  TODO: get type_index properly
+  auto type_index = GYRO;
+  imu_msg.header.frame_id = OPTICAL_FRAME_ID.at(type_index);
+
+  imu_msg.orientation.x = 0.0;
+  imu_msg.orientation.y = 0.0;
+  imu_msg.orientation.z = 0.0;
+  imu_msg.orientation.w = 0.0;
+
+
+  imu_msg.orientation_covariance = {-1.0, 0.0, 0.0,
+                                    0.0, 0.0, 0.0,
+                                    0.0, 0.0, 0.0};
+  imu_msg.linear_acceleration_covariance = {linear_accel_cov_, 0.0, 0.0,
+                                            0.0, linear_accel_cov_, 0.0,
+                                            0.0, 0.0, linear_accel_cov_};
+  imu_msg.angular_velocity_covariance = {angular_velocity_cov_, 0.0, 0.0,
+                                         0.0, angular_velocity_cov_, 0.0,
+                                         0.0, 0.0, angular_velocity_cov_};
+}
+
+template <typename T> T lerp(const T &a, const T &b, const double t) {
+  return a * (1.0 - t) + b * t;
+}
+
+void RealSenseD435I::FillImuData_LinearInterpolation(const CimuData imu_data, std::deque<sensor_msgs::msg::Imu>& imu_msgs)
+{
+  static std::deque<CimuData> _imu_history;
+  _imu_history.push_back(imu_data);
+  stream_index_pair type(imu_data.m_type);
+  imu_msgs.clear();
+
+  if ((type != ACCEL) || _imu_history.size() < 3)
+    return;
+
+  std::deque<CimuData> gyros_data;
+  CimuData accel0, accel1, crnt_imu;
+
+  while (_imu_history.size())
+  {
+    crnt_imu = _imu_history.front();
+    _imu_history.pop_front();
+    if (!accel0.is_set() && crnt_imu.m_type == ACCEL)
+    {
+      accel0 = crnt_imu;
+    }
+    else if (accel0.is_set() && crnt_imu.m_type == ACCEL)
+    {
+      accel1 = crnt_imu;
+      const double dt = accel1.m_time - accel0.m_time;
+
+      while (gyros_data.size())
+      {
+        CimuData crnt_gyro = gyros_data.front();
+        gyros_data.pop_front();
+        const double alpha = (crnt_gyro.m_time - accel0.m_time) / dt;
+        CimuData crnt_accel(ACCEL, lerp(accel0.m_data, accel1.m_data, alpha), crnt_gyro.m_time);
+        imu_msgs.push_back(CreateUnitedMessage(crnt_accel, crnt_gyro));
+      }
+      accel0 = accel1;
+    }
+    else if (accel0.is_set() && crnt_imu.m_time >= accel0.m_time && crnt_imu.m_type == GYRO)
+    {
+      gyros_data.push_back(crnt_imu);
+    }
+  }
+  _imu_history.push_back(crnt_imu);
+  return;
+}
+
 }  // namespace realsense
