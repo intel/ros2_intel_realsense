@@ -32,8 +32,9 @@ namespace realsense
   const stream_index_pair INFRA2{RS2_STREAM_INFRARED, 2};
   const stream_index_pair FISHEYE1{RS2_STREAM_FISHEYE, 1};
   const stream_index_pair FISHEYE2{RS2_STREAM_FISHEYE, 2};
-  const stream_index_pair GYRO{RS2_STREAM_GYRO, 0};
   const stream_index_pair ACCEL{RS2_STREAM_ACCEL, 0};
+  const stream_index_pair GYRO{RS2_STREAM_GYRO, 0};
+  const stream_index_pair IMU{RS2_STREAM_ANY, 0};
   const stream_index_pair POSE{RS2_STREAM_POSE, 0};
 
   const bool ALIGN_DEPTH = true;
@@ -66,6 +67,7 @@ namespace realsense
   const std::string DEFAULT_FISHEYE2_OPTICAL_FRAME_ID = "camera_fisheye2_optical_frame";
   const std::string DEFAULT_ACCEL_OPTICAL_FRAME_ID    = "camera_accel_optical_frame";
   const std::string DEFAULT_GYRO_OPTICAL_FRAME_ID     = "camera_gyro_optical_frame";
+  const std::string DEFAULT_IMU_OPTICAL_FRAME_ID      = "camera_imu_optical_frame";
   const std::string DEFAULT_POSE_OPTICAL_FRAME_ID     = "camera_pose_optical_frame";
 
   const std::string DEFAULT_ALIGNED_DEPTH_TO_COLOR_FRAME_ID = "camera_aligned_depth_to_color_frame";
@@ -90,6 +92,7 @@ namespace realsense
                                                           {RS2_STREAM_FISHEYE, RS2_FORMAT_Y8},
                                                           {RS2_STREAM_ACCEL, RS2_FORMAT_MOTION_XYZ32F},
                                                           {RS2_STREAM_GYRO, RS2_FORMAT_MOTION_XYZ32F},
+                                                          {RS2_STREAM_ANY, RS2_FORMAT_MOTION_XYZ32F},
                                                           {RS2_STREAM_POSE, RS2_FORMAT_6DOF}};
 
   const std::map<rs2_stream, std::string> STREAM_NAME = {{RS2_STREAM_COLOR, "color"},
@@ -97,6 +100,7 @@ namespace realsense
                                                          {RS2_STREAM_INFRARED, "infra"},
                                                          {RS2_STREAM_ACCEL, "accel"},
                                                          {RS2_STREAM_GYRO, "gyro"},
+                                                         {RS2_STREAM_ANY, "imu"},
                                                          {RS2_STREAM_FISHEYE, "fisheye"},
                                                          {RS2_STREAM_POSE, "pose"}};
 
@@ -108,6 +112,7 @@ namespace realsense
                                                                      {FISHEYE2, DEFAULT_FISHEYE2_OPTICAL_FRAME_ID},
                                                                      {ACCEL, DEFAULT_ACCEL_OPTICAL_FRAME_ID},
                                                                      {GYRO, DEFAULT_GYRO_OPTICAL_FRAME_ID},
+                                                                     {IMU, DEFAULT_IMU_OPTICAL_FRAME_ID},
                                                                      {POSE, DEFAULT_POSE_OPTICAL_FRAME_ID}};
 
   const std::map<stream_index_pair, std::string> SAMPLE_TOPIC = {{COLOR, "camera/color/image_raw"},
@@ -118,6 +123,7 @@ namespace realsense
                                                                  {FISHEYE2, "camera/fisheye2/image_raw"},
                                                                  {ACCEL, "camera/accel/sample"},
                                                                  {GYRO, "camera/gyro/sample"},
+                                                                 {IMU, "camera/imu/sample"},
                                                                  {POSE, "camera/odom/sample"}};
 
   const std::map<stream_index_pair, std::string> INFO_TOPIC = {{COLOR, "camera/color/camera_info"},
@@ -128,6 +134,7 @@ namespace realsense
                                                                {FISHEYE2, "camera/fisheye2/camera_info"},
                                                                {ACCEL, "camera/accel/imu_info"},
                                                                {GYRO, "camera/gyro/imu_info"},
+                                                               {IMU, "camera/imu/imu_info"},
                                                                {POSE, ""}};
 
   const std::string ALIGNED_DEPTH_IMAGE_TOPIC = "camera/aligned_depth_to_color/image_raw";

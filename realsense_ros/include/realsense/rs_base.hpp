@@ -108,7 +108,7 @@ protected:
   rclcpp::TimerBase::SharedPtr timer_;
   std::map<stream_index_pair, bool> enable_ = {{COLOR, false}, {DEPTH, false},
                                                {INFRA1, false}, {INFRA2, false},
-                                               {ACCEL, false}, {GYRO, false},
+                                               {ACCEL, false}, {GYRO, false}, {IMU, false},
                                                {FISHEYE1, false}, {FISHEYE2, false},
                                                {POSE, false}};
 
