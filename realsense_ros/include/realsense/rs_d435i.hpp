@@ -30,11 +30,11 @@ public:
   virtual ~RealSenseD435I() = default;
   virtual void publishTopicsCallback(const rs2::frame & frame) override;
   virtual Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
-  void publishIMUTopic(const rs2::frame & frame, const rclcpp::Time & time);
+  void publishIMUTopic(const rs2::frame & frame);
   IMUInfo getIMUInfo(const rs2::frame & frame, const stream_index_pair & stream_index);
 
  public:
-  enum imu_sync_method{NONE, COPY, LINEAR_INTERPOLATION};
+  enum imu_sync_method{COPY, LINEAR_INTERPOLATION};
 
  protected:
   class float3
@@ -80,15 +80,16 @@ private:
 
   void FillImuData_Copy(const CimuData imu_data, std::deque<sensor_msgs::msg::Imu>& imu_msgs);
   void ImuMessage_AddDefaultValues(sensor_msgs::msg::Imu &imu_msg);
+  void imu_callback_sync(const rs2::frame & frame, imu_sync_method sync_method);
   void FillImuData_LinearInterpolation(const CimuData imu_data, std::deque<sensor_msgs::msg::Imu>& imu_msgs);
 
 private:
   const std::vector<stream_index_pair> IMAGE_STREAMS = {COLOR, DEPTH, INFRA1, INFRA2};
-  const std::vector<stream_index_pair> MOTION_STREAMS = {ACCEL, GYRO};
+  const std::vector<stream_index_pair> MOTION_STREAMS = {ACCEL, GYRO, IMU};
   double linear_accel_cov_;
   double angular_velocity_cov_;
   bool initialized_ = false;
-  imu_sync_method _imu_sync_method;
+  imu_sync_method imu_sync_method_;
 };
 }  // namespace perception
 #endif // REALSENSE__RS_D435I_HPP_

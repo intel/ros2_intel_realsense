@@ -72,7 +72,7 @@ namespace realsense
 
   const std::string DEFAULT_ALIGNED_DEPTH_TO_COLOR_FRAME_ID = "camera_aligned_depth_to_color_frame";
 
-  const std::string DEFAULT_UNITE_IMU_METHOD         = "";
+  const std::string DEFAULT_UNITE_IMU_METHOD         = "linear_interpolation";
   const std::string DEFAULT_FILTERS                  = "";
   const std::string DEFAULT_TOPIC_ODOM_IN            = "";
 
