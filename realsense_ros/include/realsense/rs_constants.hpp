@@ -81,8 +81,8 @@ namespace realsense
 
   const std::map<rs2_stream, std::string> MSG_ENCODING = {{RS2_STREAM_COLOR, sensor_msgs::image_encodings::RGB8},
                                                           {RS2_STREAM_DEPTH, sensor_msgs::image_encodings::TYPE_16UC1},
-                                                          {RS2_STREAM_INFRARED, sensor_msgs::image_encodings::TYPE_8UC1},
-                                                          {RS2_STREAM_FISHEYE, sensor_msgs::image_encodings::TYPE_8UC1}};
+                                                          {RS2_STREAM_INFRARED, sensor_msgs::image_encodings::MONO8},
+                                                          {RS2_STREAM_FISHEYE, sensor_msgs::image_encodings::MONO8}};
 
   const std::map<rs2_stream, rs2_format> STREAM_FORMAT = {{RS2_STREAM_COLOR, RS2_FORMAT_RGB8},
                                                           {RS2_STREAM_DEPTH, RS2_FORMAT_Z16},
