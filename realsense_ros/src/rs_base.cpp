@@ -94,17 +94,18 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
     enable = node_.declare_parameter(os.str(), DEFAULT_ENABLE_STREAM);
   }
 
+  rclcpp::SensorDataQoS qos;
   if (stream == ACCEL || stream == GYRO) {
     imu_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr>
-      (stream, node_.create_publisher<sensor_msgs::msg::Imu>(SAMPLE_TOPIC.at(stream), rclcpp::QoS(1))));
+      (stream, node_.create_publisher<sensor_msgs::msg::Imu>(SAMPLE_TOPIC.at(stream), qos)));
     imu_info_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<realsense_msgs::msg::IMUInfo>::SharedPtr>
-      (stream, node_.create_publisher<realsense_msgs::msg::IMUInfo>(INFO_TOPIC.at(stream), rclcpp::QoS(1))));
+      (stream, node_.create_publisher<realsense_msgs::msg::IMUInfo>(INFO_TOPIC.at(stream), qos)));
     if (enable == true) {
       enable_[stream] = true;
       cfg_.enable_stream(stream.first, stream.second);
     }
   } else if (stream == POSE) {
-    odom_pub_ = node_.create_publisher<nav_msgs::msg::Odometry>(SAMPLE_TOPIC.at(stream), rclcpp::QoS(1));
+    odom_pub_ = node_.create_publisher<nav_msgs::msg::Odometry>(SAMPLE_TOPIC.at(stream), qos);
     if (enable == true) {
       enable_[stream] = true;
       cfg_.enable_stream(stream.first, stream.second);
@@ -149,9 +150,9 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
 
     stream_info_.insert(std::pair<stream_index_pair, VideoStreamInfo>(stream, info));
     image_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr>
-      (stream, node_.create_publisher<sensor_msgs::msg::Image>(SAMPLE_TOPIC.at(stream), rclcpp::QoS(1))));
+      (stream, node_.create_publisher<sensor_msgs::msg::Image>(SAMPLE_TOPIC.at(stream), qos)));
     camera_info_pub_.insert(std::pair<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr>
-      (stream, node_.create_publisher<sensor_msgs::msg::CameraInfo>(INFO_TOPIC.at(stream), rclcpp::QoS(1))));
+      (stream, node_.create_publisher<sensor_msgs::msg::CameraInfo>(INFO_TOPIC.at(stream), qos)));
     if (enable == true) {
       enable_[stream] = true;
       cfg_.enable_stream(stream.first, stream.second, info.width, info.height, STREAM_FORMAT.at(stream.first), info.fps);

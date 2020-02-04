@@ -756,15 +756,16 @@ int main(int argc, char * argv[])
   auto node = rclcpp::Node::make_shared("realsense_camera");
   rmw_qos_profile_t custom_qos = rmw_qos_profile_default;
 
+  rclcpp::SensorDataQoS qos;
   RCLCPP_INFO(node->get_logger(), "Create a node for %s Camera", camera_type.c_str());
   auto depth_sub = image_transport::create_camera_subscription(node.get(), "/camera/depth/image_rect_raw", imageDepthCallback, "raw", custom_qos);
   auto color_sub = image_transport::create_camera_subscription(node.get(),"/camera/color/image_raw", imageColorCallback, "raw", custom_qos);
   auto infra1_sub = image_transport::create_camera_subscription(node.get(), "/camera/infra1/image_rect_raw", imageInfrared1Callback, "raw", custom_qos);
   auto infra2_sub = image_transport::create_camera_subscription(node.get(), "/camera/infra2/image_rect_raw", imageInfrared2Callback, "raw", custom_qos);
   auto alginDepth_sub = image_transport::create_camera_subscription(node.get(), "/camera/aligned_depth_to_color/image_raw", imageAlignDepthCallback, "raw", custom_qos);
-  auto sub_pointcloud = node->create_subscription<sensor_msgs::msg::PointCloud2>("camera/pointcloud", rclcpp::QoS(1), pcCallback);
-  auto sub_accel = node->create_subscription<sensor_msgs::msg::Imu>("/camera/accel/sample", rclcpp::QoS(1), accelCallback);
-  auto sub_gyro = node->create_subscription<sensor_msgs::msg::Imu>("/camera/gyro/sample", rclcpp::QoS(1), gyroCallback);
+  auto sub_pointcloud = node->create_subscription<sensor_msgs::msg::PointCloud2>("camera/pointcloud", qos, pcCallback);
+  auto sub_accel = node->create_subscription<sensor_msgs::msg::Imu>("/camera/accel/sample", qos, accelCallback);
+  auto sub_gyro = node->create_subscription<sensor_msgs::msg::Imu>("/camera/gyro/sample", qos, gyroCallback);
   auto fisheye1_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye1/image_raw", imageFisheye1Callback, "raw", custom_qos);
   auto fisheye2_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye2/image_raw", imageFisheye2Callback, "raw", custom_qos);
 
