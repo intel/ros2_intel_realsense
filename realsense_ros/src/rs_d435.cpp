@@ -112,6 +112,8 @@ Result RealSenseD435::paramChangeCallback(const std::vector<rclcpp::Parameter> &
         result = changeFPS(COLOR, param);
       } else if (param_name == "depth0.enabled") {
         result = toggleStream(DEPTH, param);
+      } else if (param_name == "depth0.emitter") {
+        result = changeEmitter(DEPTH, param);
       } else if (param_name == "depth0.resolution") {
         result = changeResolution(DEPTH, param);
       } else if (param_name == "depth0.fps") {

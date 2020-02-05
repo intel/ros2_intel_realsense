@@ -80,6 +80,7 @@ protected:
   Result toggleStream(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeResolution(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeFPS(const stream_index_pair & stream, const rclcpp::Parameter & param);
+  Result changeEmitter(const stream_index_pair & stream, const rclcpp::Parameter & param);
 
   typedef struct VideoStreamInfo
   {
