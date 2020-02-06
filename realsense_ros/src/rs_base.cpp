@@ -126,6 +126,17 @@ void RealSenseBase::setupStream(const stream_index_pair & stream)
         node_.get_parameter(os.str(), fps);} else {
         fps = node_.declare_parameter(os.str(), DEFAULT_IMAGE_FPS);    
       }
+      if (stream == DEPTH) {
+        int value;
+        os.str("");
+        os << STREAM_NAME.at(stream.first) << stream.second << ".emitter";
+        if (node_.has_parameter(os.str())) {
+          node_.get_parameter(os.str(), value);} else {
+          value = node_.declare_parameter(os.str(), DEFAULT_DEPTH_EMITTER);
+        }
+        auto param = rclcpp::Parameter(os.str(), value);
+        changeEmitter(stream, param);
+      }
     } else if (stream == FISHEYE1 || stream == FISHEYE2) {
       auto param_desc = rcl_interfaces::msg::ParameterDescriptor();
       param_desc.read_only = true;
@@ -456,5 +467,38 @@ Result RealSenseBase::changeFPS(const stream_index_pair & stream, const rclcpp::
     result.reason = "Unsupported configuration.";
   }
   return result;
+}
+
+Result RealSenseBase::changeEmitter(const stream_index_pair & stream, const rclcpp::Parameter & param)
+{
+  auto result = Result();
+  result.successful = true;
+  if (param.get_type() != rclcpp::ParameterType::PARAMETER_INTEGER) {
+    result.successful = false;
+    result.reason = "Type should be integer.";
+    return result;
+  }
+  int value = param.as_int();
+  if (stream == DEPTH) {
+    auto depth_sensor = dev_.first<rs2::depth_sensor>();
+    if (depth_sensor.supports(RS2_OPTION_EMITTER_ENABLED)) {
+      depth_sensor.set_option(RS2_OPTION_EMITTER_ENABLED, (float)(value));
+    } else {
+      result.successful = false;
+      result.reason = "Unsupported depth sensor.";
+    }
+  } else {
+    result.successful = false;
+    result.reason = "Unsupported stream.";
+  }
+  return result;
+}
+
+rclcpp::Time RealSenseBase::frameToTime(const rs2::frame & frame) {
+  return rclcpp::Time(RCL_MS_TO_NS(frame.get_timestamp()));
+}
+
+rclcpp::Time RealSenseBase::msToTime(const double & ms) {
+  return rclcpp::Time(RCL_MS_TO_NS(ms));
 }
 }  // namespace realsense

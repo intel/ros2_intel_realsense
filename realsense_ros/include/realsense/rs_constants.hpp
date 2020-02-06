@@ -44,6 +44,7 @@ namespace realsense
   const std::vector<int> DEFAULT_IMAGE_RESOLUTION = {640, 480};
   const std::vector<int> FISHEYE_RESOLUTION = {848, 800};
   const int DEFAULT_IMAGE_FPS = 30;
+  const int DEFAULT_DEPTH_EMITTER = 1;
 
   const double DEFAULT_LINEAR_ACCEL_COV = 0.01;
   const double DEFAULT_ANGULAR_VELOCITY_COV = 0.01;
