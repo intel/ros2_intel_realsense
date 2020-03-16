@@ -17,6 +17,7 @@
 #include "realsense/rs_d435.hpp"
 #include "realsense/rs_d435i.hpp"
 #include "realsense/rs_t265.hpp"
+#include "realsense/rs_sr300.hpp"
 
 namespace realsense
 {
@@ -92,9 +93,14 @@ void RealSenseNodeFactory::startDevice()
         RCLCPP_INFO(this->get_logger(), "Create a node for T265 Camera");
         rs_node_ = std::make_unique<RealSenseT265>(ctx_, dev_, *this);
         break;
+      case RS_SR300_PID:
+        RCLCPP_INFO(this->get_logger(), "Create a node for SR300 Camera");
+        rs_node_ = std::make_unique<RealSenseSR300>(ctx_, dev_, *this);
+        break;
       default:
         RCLCPP_ERROR(this->get_logger(), "Unsupported device! Product ID: 0x%s", pid_str);
         rclcpp::shutdown();
+
     }
   rs_node_->startPipeline();
 }

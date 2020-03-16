@@ -93,6 +93,7 @@ add_library(${PROJECT_NAME} SHARED
   src/rs_d435.cpp
   src/rs_d435i.cpp
   src/rs_t265.cpp
+  src/rs_sr300.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
