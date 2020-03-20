@@ -30,6 +30,8 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   } else {
     base_frame_id_ = node_.declare_parameter("base_frame_id", DEFAULT_BASE_FRAME_ID);
   }
+  auto sn = dev_.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+  cfg_.enable_device(sn);
   pipeline_ = rs2::pipeline(ctx_);
   static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node_);
   node_.set_on_parameters_set_callback(std::bind(&RealSenseBase::paramChangeCallback, this, std::placeholders::_1));
