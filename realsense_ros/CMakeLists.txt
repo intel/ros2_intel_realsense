@@ -164,7 +164,7 @@ if(BUILD_TESTING)
 	${PROJECT_NAME})
       ament_target_dependencies(${target}
         "rclcpp"
-        "rclcpp_componets"
+        "rclcpp_components"
         "nav_msgs"
         "sensor_msgs"
         "cv_bridge"
