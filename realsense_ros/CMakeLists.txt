@@ -134,7 +134,6 @@ install(
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(rclcpp REQUIRED)
-  find_package(rclcpp_components REQUIRED)
   find_package(nav_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
   find_package(cv_bridge REQUIRED)
@@ -169,7 +168,7 @@ if(BUILD_TESTING)
         "sensor_msgs"
         "cv_bridge"
         "tf2"
-	"tf2_ros"
+        "tf2_ros"
         "pcl_conversions"
         "realsense_msgs"
         "realsense2"

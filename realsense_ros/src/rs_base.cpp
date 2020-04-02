@@ -30,6 +30,8 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   } else {
     base_frame_id_ = node_.declare_parameter("base_frame_id", DEFAULT_BASE_FRAME_ID);
   }
+  auto sn = dev_.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
+  cfg_.enable_device(sn);
   pipeline_ = rs2::pipeline(ctx_);
   static_tf_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node_);
   node_.set_on_parameters_set_callback(std::bind(&RealSenseBase::paramChangeCallback, this, std::placeholders::_1));
@@ -38,6 +40,19 @@ RealSenseBase::RealSenseBase(rs2::context ctx, rs2::device dev, rclcpp::Node & n
 RealSenseBase::~RealSenseBase()
 {
   pipeline_.stop();
+  if (work_thread_.joinable()) {
+      work_thread_.join();
+  }
+}
+
+void RealSenseBase::startWorkThread() 
+{
+  work_thread_ = std::thread([=]() {
+    while (true) {
+      rs2::frame frame = frame_data.wait_for_frame();
+      publishTopicsCallback(frame);
+    }
+  });
 }
 
 void RealSenseBase::startPipeline()
@@ -64,7 +79,9 @@ void RealSenseBase::startPipeline()
     RCLCPP_WARN(node_.get_logger(), "No TF is available. Enable base stream (Depth or Pose) first.");
   }
 
-  pipeline_.start(cfg_, std::bind(&RealSenseBase::publishTopicsCallback, this, std::placeholders::_1));
+  frame_data = rs2::frame_queue(5);
+  pipeline_.start(cfg_, frame_data);
+  startWorkThread();
 }
 
 void RealSenseBase::setupStream(const stream_index_pair & stream)
@@ -259,7 +276,6 @@ void RealSenseBase::calculateTFAndPublish(const rs2::stream_profile & stream_in,
   Q = quaternion_optical * Q * quaternion_optical.inverse();
 
   Float3 translation{ex.translation[0], ex.translation[1], ex.translation[2]};
-  Float3 zero_trans{0, 0, 0};
   auto type = stream_in.stream_type();
   auto index = stream_in.stream_index();
   auto type_index = std::pair<rs2_stream, int>(type, index);
