@@ -1,6 +1,11 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Changelog for ros2_intel_realsense
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2.0.7 (2020-04-20)
+------------------
+Support the latest release(v2.34.0) of librealsense
+Support ROS2 Foxy release
+
 2.0.6 (2019-09-03)
 ------------------
 * support multi camera
