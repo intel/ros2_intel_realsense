@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>realsense_msgs</name>
-  <version>2.0.5</version>
+  <version>2.0.7</version>
   <description>Message Definition for ROS2 RealSense Package</description>
   <maintainer email="xiaojun.huang@intel.com">Xiaojun Huang</maintainer>
   <license>Apache License 2.0</license>
