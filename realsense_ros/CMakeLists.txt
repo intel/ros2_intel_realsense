@@ -69,16 +69,17 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(cv_bridge REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
-find_package(pcl_conversions REQUIRED)
 find_package(realsense_msgs)
 
 find_package(realsense2)
 if(NOT realsense2_FOUND)
   message(FATAL_ERROR "\n\n Intel RealSense SDK 2.0 is missing, please install it from https://github.com/IntelRealSense/librealsense/releases\n\n")
 endif()
+find_library(realsense2_LIBRARIES realsense2)
+find_path(realsense2_INCLUDE_DIRS librealsense2/rs.hpp)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -96,7 +97,8 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME}
-  realsense2
+  ${realsense2_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )
 
 ament_target_dependencies(${PROJECT_NAME}
@@ -104,10 +106,8 @@ ament_target_dependencies(${PROJECT_NAME}
   rclcpp_components
   nav_msgs
   sensor_msgs
-  cv_bridge
   tf2
   tf2_ros
-  pcl_conversions
   realsense2
   realsense_msgs
 )
@@ -136,10 +136,8 @@ if(BUILD_TESTING)
   find_package(rclcpp REQUIRED)
   find_package(nav_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
-  find_package(cv_bridge REQUIRED)
   find_package(tf2 REQUIRED)
   find_package(tf2_ros REQUIRED)
-  find_package(pcl_conversions REQUIRED)
   find_package(realsense_msgs)
   find_package(realsense2)
   find_package(image_transport REQUIRED)
@@ -159,16 +157,14 @@ if(BUILD_TESTING)
         ${${PROJECT_NAME}_INCLUDE_DIRS}
       )
       target_link_libraries(${target}
-        realsense2
+        ${realsense2_LIBRARIES}
 	${PROJECT_NAME})
       ament_target_dependencies(${target}
         "rclcpp"
         "nav_msgs"
         "sensor_msgs"
-        "cv_bridge"
         "tf2"
 	"tf2_ros"
-        "pcl_conversions"
         "realsense_msgs"
         "realsense2"
         "image_transport")

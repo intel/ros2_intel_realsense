@@ -13,10 +13,8 @@
   <depend>rclcpp_components</depend>
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
-  <depend>cv_bridge</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
-  <depend>pcl_conversions</depend>
   <depend>librealsense2</depend>
   <depend>realsense_msgs</depend>
   <depend>image_transport</depend>

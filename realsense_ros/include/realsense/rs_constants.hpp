@@ -14,8 +14,8 @@
 
 #ifndef REALSENSE__RS_CONSTANTS_HPP_
 #define REALSENSE__RS_CONSTANTS_HPP_
-
-#include "cv_bridge/cv_bridge.h"
+#include <sensor_msgs/image_encodings.hpp>
+#include <opencv2/imgproc/types_c.h>
 
 namespace realsense
 {

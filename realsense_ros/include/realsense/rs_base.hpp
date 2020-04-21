@@ -19,6 +19,7 @@
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/imu.hpp"
+#include "std_msgs/msg/header.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_ros/static_transform_broadcaster.h"
@@ -80,6 +81,10 @@ protected:
   Result toggleStream(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeResolution(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeFPS(const stream_index_pair & stream, const rclcpp::Parameter & param);
+  void toMsg(const std_msgs::msg::Header& header,
+    const std::string& encoding, const cv::Mat& image, sensor_msgs::msg::Image & ros_image);
+  sensor_msgs::msg::Image::SharedPtr toMsg(const std_msgs::msg::Header& header,
+    const std::string& encoding, const cv::Mat& image = cv::Mat());
 
   typedef struct VideoStreamInfo
   {

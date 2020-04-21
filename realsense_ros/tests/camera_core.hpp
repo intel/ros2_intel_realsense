@@ -38,7 +38,6 @@
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "realsense/rs_constants.hpp"
 #include "realsense/rs_base.hpp"
-#include "cv_bridge/cv_bridge.h"
 
 #include "image_transport/image_transport.h"
 #include "image_transport/camera_subscriber.h"

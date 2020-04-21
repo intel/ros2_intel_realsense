@@ -170,7 +170,7 @@ void RealSenseD435::publishAlignedDepthTopic(const rs2::frame & frame, const rcl
 
   if (!node_.get_node_options().use_intra_process_comms()) {
     sensor_msgs::msg::Image::SharedPtr img;
-    img = cv_bridge::CvImage(std_msgs::msg::Header(), MSG_ENCODING.at(type), cv_image).toImageMsg();
+    img = toMsg(std_msgs::msg::Header(), MSG_ENCODING.at(type), cv_image);
     //debug
     //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
     //
@@ -180,7 +180,7 @@ void RealSenseD435::publishAlignedDepthTopic(const rs2::frame & frame, const rcl
   } else {
     sensor_msgs::msg::Image::UniquePtr img;
     img = std::make_unique<sensor_msgs::msg::Image>();
-    cv_bridge::CvImage(std_msgs::msg::Header(), sensor_msgs::image_encodings::RGB8, cv_image).toImageMsg(*img);
+    toMsg(std_msgs::msg::Header(), sensor_msgs::image_encodings::RGB8, cv_image, *img);
     //debug
     //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
     //
