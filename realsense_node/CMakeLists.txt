@@ -68,11 +68,19 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(cv_bridge REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(realsense_ros REQUIRED)
 find_package(realsense_msgs REQUIRED)
+
+find_library(realsense2_LIBRARIES realsense2)
+find_path(realsense2_INCLUDE_DIRS librealsense2/rs.hpp)
+
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${realsense2_INCLUDE_DIRS}
+)
 
 add_executable(realsense_node
   src/realsense_node.cpp
@@ -82,11 +90,14 @@ ament_target_dependencies(realsense_node
   rclcpp
   nav_msgs
   sensor_msgs
-  cv_bridge
   tf2
   tf2_ros
   realsense_ros
   realsense_msgs
+)
+
+target_link_libraries(realsense_node
+  ${OpenCV_LIBRARIES}
 )
 
 install(TARGETS realsense_node

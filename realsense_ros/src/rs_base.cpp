@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include <boost/endian/conversion.hpp>
 #include "realsense/rs_base.hpp"
 
 namespace realsense
@@ -175,7 +176,7 @@ void RealSenseBase::publishImageTopic(const rs2::frame & frame, const rclcpp::Ti
 
   if (!node_.get_node_options().use_intra_process_comms()) {
     sensor_msgs::msg::Image::SharedPtr img;
-    img = cv_bridge::CvImage(std_msgs::msg::Header(), MSG_ENCODING.at(type), cv_image).toImageMsg();
+    img = toMsg(std_msgs::msg::Header(), MSG_ENCODING.at(type), cv_image);
     //debug
     //RCLCPP_INFO(node_.get_logger(), "non-intra: timestamp: %f, address: %p", time.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
     //
@@ -184,7 +185,7 @@ void RealSenseBase::publishImageTopic(const rs2::frame & frame, const rclcpp::Ti
     image_pub_[type_index]->publish(*img);
   } else {
     auto img = std::make_unique<sensor_msgs::msg::Image>();
-    cv_bridge::CvImage(std_msgs::msg::Header(), MSG_ENCODING.at(type), cv_image).toImageMsg(*img);
+    toMsg(std_msgs::msg::Header(), MSG_ENCODING.at(type), cv_image, *img);
     //debug
     //RCLCPP_INFO(node_.get_logger(), "intra: timestamp: %f, address: %p", time.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
     //
@@ -459,4 +460,40 @@ Result RealSenseBase::changeFPS(const stream_index_pair & stream, const rclcpp::
   }
   return result;
 }
+
+sensor_msgs::msg::Image::SharedPtr RealSenseBase::toMsg(const std_msgs::msg::Header& header,
+  const std::string& encoding, const cv::Mat& image)
+{
+  sensor_msgs::msg::Image::SharedPtr ptr = std::make_shared<sensor_msgs::msg::Image>();
+  toMsg(header, encoding, image, *ptr);
+  return ptr;
+}
+
+void RealSenseBase::toMsg(const std_msgs::msg::Header& header,
+  const std::string& encoding, const cv::Mat& image, sensor_msgs::msg::Image & ros_image)
+{
+  sensor_msgs::msg::Image::SharedPtr ptr = std::make_shared<sensor_msgs::msg::Image>();
+  ros_image.header = header;
+  ros_image.height = image.rows;
+  ros_image.width = image.cols;
+  ros_image.encoding = encoding;
+  ros_image.is_bigendian = (boost::endian::order::native == boost::endian::order::big);
+  ros_image.step = image.cols * image.elemSize();
+  size_t size = ros_image.step * image.rows;
+  ros_image.data.resize(size);
+
+  if (image.isContinuous()) {
+    memcpy(reinterpret_cast<char *>(&ros_image.data[0]), image.data, size);
+  } else {
+    // Copy by row by row
+    uchar * ros_data_ptr = reinterpret_cast<uchar *>(&ros_image.data[0]);
+    uchar * cv_data_ptr = image.data;
+    for (int i = 0; i < image.rows; ++i) {
+      memcpy(ros_data_ptr, cv_data_ptr, ros_image.step);
+      ros_data_ptr += ros_image.step;
+      cv_data_ptr += image.step;
+    }
+  }
+}
+
 }  // namespace realsense
