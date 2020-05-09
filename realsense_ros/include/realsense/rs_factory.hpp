@@ -15,6 +15,8 @@
 #ifndef REALSENSE__RS_FACTORY_HPP_
 #define REALSENSE__RS_FACTORY_HPP_
 
+#include <memory>
+#include <string>
 #include "rclcpp/rclcpp.hpp"
 #include "librealsense2/rs.hpp"
 #include "realsense/rs_constants.hpp"
@@ -25,9 +27,12 @@ namespace realsense
 class RealSenseNodeFactory : public rclcpp::Node
 {
 public:
-  RealSenseNodeFactory(const rclcpp::NodeOptions & node_options=rclcpp::NodeOptions());
-  RealSenseNodeFactory(const std::string & node_name, const std::string & ns, const rclcpp::NodeOptions & node_options=rclcpp::NodeOptions());
+  explicit RealSenseNodeFactory(const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions());
+  RealSenseNodeFactory(
+    const std::string & node_name, const std::string & ns,
+    const rclcpp::NodeOptions & node_options = rclcpp::NodeOptions());
   virtual ~RealSenseNodeFactory();
+
 private:
   void init();
   void startDevice();

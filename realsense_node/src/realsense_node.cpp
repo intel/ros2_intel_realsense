@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include "realsense/rs_factory.hpp"
 
 int main(int argc, char ** argv)

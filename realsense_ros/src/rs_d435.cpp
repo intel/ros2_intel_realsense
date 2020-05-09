@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <opencv2/opencv.hpp>
+#include <memory>
+#include <utility>
+#include <vector>
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 #include "realsense/rs_d435.hpp"
 
@@ -20,7 +23,7 @@ namespace realsense
 {
 RealSenseD435::RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & node)
 : RealSenseBase(ctx, dev, node)
-{ 
+{
   for (auto & stream : IMAGE_STREAMS) {
     setupStream(stream);
   }
@@ -32,11 +35,15 @@ RealSenseD435::RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   }
   if (align_depth_ == true) {
     if (enable_[COLOR] == false || enable_[DEPTH] == false) {
-      RCLCPP_WARN(node_.get_logger(), "Make sure color and depth frame are enabled before aligning depth to color.");
+      RCLCPP_WARN(
+        node_.get_logger(),
+        "Make sure color and depth frame are enabled before aligning depth to color.");
     }
   }
-  aligned_depth_image_pub_ = node_.create_publisher<sensor_msgs::msg::Image>(ALIGNED_DEPTH_IMAGE_TOPIC, rclcpp::QoS(1));
-  aligned_depth_info_pub_ = node_.create_publisher<sensor_msgs::msg::CameraInfo>(ALIGNED_DEPTH_INFO_TOPIC, rclcpp::QoS(1));
+  aligned_depth_image_pub_ = node_.create_publisher<sensor_msgs::msg::Image>(
+    ALIGNED_DEPTH_IMAGE_TOPIC, rclcpp::QoS(1));
+  aligned_depth_info_pub_ = node_.create_publisher<sensor_msgs::msg::CameraInfo>(
+    ALIGNED_DEPTH_INFO_TOPIC, rclcpp::QoS(1));
 
   if (node_.has_parameter("enable_pointcloud")) {
     node_.get_parameter("enable_pointcloud", enable_pointcloud_);
@@ -45,10 +52,14 @@ RealSenseD435::RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & n
   }
   if (enable_pointcloud_ == true) {
     if (enable_[COLOR] == false || enable_[DEPTH] == false) {
-      RCLCPP_WARN(node_.get_logger(), "Make sure color and depth frame are enabled before publishing pointcloud.");
+      RCLCPP_WARN(
+        node_.get_logger(),
+        "Make sure color and depth frame are enabled before publishing pointcloud.");
     }
   }
-  pointcloud_pub_ = node_.create_publisher<sensor_msgs::msg::PointCloud2>(POINTCLOUD_TOPIC, rclcpp::QoS(1));
+  pointcloud_pub_ = node_.create_publisher<sensor_msgs::msg::PointCloud2>(
+    POINTCLOUD_TOPIC, rclcpp::QoS(
+      1));
   if (node_.has_parameter("dense_pointcloud")) {
     node_.get_parameter("dense_pointcloud", dense_pc_);
   } else {
@@ -61,28 +72,43 @@ void RealSenseD435::publishTopicsCallback(const rs2::frame & frame)
 {
   rs2::frameset frameset = frame.as<rs2::frameset>();
   rclcpp::Time t = node_.now();
-  if (enable_[COLOR] && (image_pub_[COLOR]->get_subscription_count() > 0 || camera_info_pub_[COLOR]->get_subscription_count() > 0)){
+  if (enable_[COLOR] &&
+    (image_pub_[COLOR]->get_subscription_count() > 0 ||
+    camera_info_pub_[COLOR]->get_subscription_count() > 0))
+  {
     auto frame = frameset.get_color_frame();
     publishImageTopic(frame, t);
   }
-  if (enable_[DEPTH] && (image_pub_[DEPTH]->get_subscription_count() > 0 || camera_info_pub_[DEPTH]->get_subscription_count() > 0)) {
+  if (enable_[DEPTH] &&
+    (image_pub_[DEPTH]->get_subscription_count() > 0 ||
+    camera_info_pub_[DEPTH]->get_subscription_count() > 0))
+  {
     auto frame = frameset.get_depth_frame();
     publishImageTopic(frame, t);
   }
-  if (enable_[INFRA1] && (image_pub_[INFRA1]->get_subscription_count() > 0 || camera_info_pub_[INFRA1]->get_subscription_count() > 0)) {
+  if (enable_[INFRA1] &&
+    (image_pub_[INFRA1]->get_subscription_count() > 0 ||
+    camera_info_pub_[INFRA1]->get_subscription_count() > 0))
+  {
     auto frame = frameset.get_infrared_frame(1);
     publishImageTopic(frame, t);
   }
-  if (enable_[INFRA2] && (image_pub_[INFRA2]->get_subscription_count() > 0 || camera_info_pub_[INFRA2]->get_subscription_count() > 0)) {
+  if (enable_[INFRA2] &&
+    (image_pub_[INFRA2]->get_subscription_count() > 0 ||
+    camera_info_pub_[INFRA2]->get_subscription_count() > 0))
+  {
     auto frame = frameset.get_infrared_frame(2);
     publishImageTopic(frame, t);
   }
-   if ((enable_pointcloud_ && pointcloud_pub_->get_subscription_count() > 0) || 
-      (align_depth_ && (aligned_depth_image_pub_->get_subscription_count() > 0 || 
-       aligned_depth_info_pub_->get_subscription_count() > 0))) {
+  if ((enable_pointcloud_ && pointcloud_pub_->get_subscription_count() > 0) ||
+    (align_depth_ && (aligned_depth_image_pub_->get_subscription_count() > 0 ||
+    aligned_depth_info_pub_->get_subscription_count() > 0)))
+  {
     auto aligned_frameset = align_to_color_.process(frameset);
     auto depth = aligned_frameset.get_depth_frame();
-    if (aligned_depth_image_pub_->get_subscription_count() > 0 || aligned_depth_info_pub_->get_subscription_count() > 0) {
+    if (aligned_depth_image_pub_->get_subscription_count() > 0 ||
+      aligned_depth_info_pub_->get_subscription_count() > 0)
+    {
       publishAlignedDepthTopic(depth, t);
     }
     if (pointcloud_pub_->get_subscription_count() > 0) {
@@ -171,30 +197,30 @@ void RealSenseD435::publishAlignedDepthTopic(const rs2::frame & frame, const rcl
   if (!node_.get_node_options().use_intra_process_comms()) {
     sensor_msgs::msg::Image::SharedPtr img;
     img = toMsg(std_msgs::msg::Header(), MSG_ENCODING.at(type), cv_image);
-    //debug
-    //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
-    //
-    img->header.frame_id = DEFAULT_ALIGNED_DEPTH_TO_COLOR_FRAME_ID;  //diff with publishTopics
+    // RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p",
+    //   t.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
+    img->header.frame_id = DEFAULT_ALIGNED_DEPTH_TO_COLOR_FRAME_ID;
     img->header.stamp = time;
-    aligned_depth_image_pub_->publish(*img);  //diff
+    aligned_depth_image_pub_->publish(*img);
   } else {
     sensor_msgs::msg::Image::UniquePtr img;
     img = std::make_unique<sensor_msgs::msg::Image>();
     toMsg(std_msgs::msg::Header(), sensor_msgs::image_encodings::RGB8, cv_image, *img);
-    //debug
-    //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
-    //
+    // RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p",
+    //   t.seconds(), reinterpret_cast<std::uintptr_t>(img.get()));
     img->header.frame_id = DEFAULT_ALIGNED_DEPTH_TO_COLOR_FRAME_ID;
     img->header.stamp = time;
     aligned_depth_image_pub_->publish(std::move(img));
   }
-  
-  //TODO: need to update calibration data if anything is changed dynamically.
-  camera_info_[COLOR].header.stamp = time; //TODO: need to change frame id to the one for aligned depth frame(not color frame).
+
+  camera_info_[COLOR].header.stamp = time;
   aligned_depth_info_pub_->publish(camera_info_[COLOR]);
 }
 
-void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time)
+void RealSenseD435::publishSparsePointCloud(
+  const rs2::points & points,
+  const rs2::video_frame & color_frame,
+  const rclcpp::Time & time)
 {
   const rs2::vertex * vertex = points.get_vertices();
   const rs2::texture_coordinate * color_point = points.get_texture_coordinates();
@@ -203,16 +229,16 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
   for (size_t index = 0; index < points.size(); index++) {
     float i = color_point[index].u;
     float j = color_point[index].v;
-    if (vertex[index].z>0 && i>=0 && i<=1 && j>=0 && j<=1) {
+    if (vertex[index].z > 0 && i >= 0 && i <= 1 && j >= 0 && j <= 1) {
       valid_indices.push_back(index);
     }
   }
-  //TODO: how to reduce some duplicated code?
+  // TODO(name): how to reduce some duplicated code?
   if (!node_.get_node_options().use_intra_process_comms()) {
-    sensor_msgs::msg::PointCloud2::SharedPtr pc_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
-    //debug
-    //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
-    //
+    sensor_msgs::msg::PointCloud2::SharedPtr pc_msg =
+      std::make_shared<sensor_msgs::msg::PointCloud2>();
+    // RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p",
+    //   t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
     pc_msg->header.stamp = time;
     pc_msg->header.frame_id = DEFAULT_COLOR_OPTICAL_FRAME_ID;
     pc_msg->width = valid_indices.size();
@@ -235,7 +261,7 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
     int width = color_frame.get_width();
     int height = color_frame.get_height();
     int channel_num = color_frame.get_bytes_per_pixel();
-    uint8_t * color_data = (uint8_t*)color_frame.get_data();
+    const uint8_t * color_data = reinterpret_cast<const uint8_t *>(color_frame.get_data());
 
     for (size_t index = 0; index < valid_indices.size(); index++) {
       auto pnt_idx = valid_indices[index];
@@ -249,8 +275,8 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
       int pixy = static_cast<int>(j * height);
       int offset = (pixy * width + pixx) * channel_num;
       *iter_r = color_data[offset];
-      *iter_g = color_data[offset+1];
-      *iter_b = color_data[offset+2];
+      *iter_g = color_data[offset + 1];
+      *iter_b = color_data[offset + 2];
       ++iter_x;
       ++iter_y;
       ++iter_z;
@@ -260,10 +286,10 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
     }
     pointcloud_pub_->publish(*pc_msg);
   } else {
-    sensor_msgs::msg::PointCloud2::UniquePtr pc_msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
-    //debug
-    //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
-    //
+    sensor_msgs::msg::PointCloud2::UniquePtr pc_msg =
+      std::make_unique<sensor_msgs::msg::PointCloud2>();
+    // RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p",
+    //   t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
     pc_msg->header.stamp = time;
     pc_msg->header.frame_id = DEFAULT_COLOR_OPTICAL_FRAME_ID;
     pc_msg->width = valid_indices.size();
@@ -286,7 +312,7 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
     int width = color_frame.get_width();
     int height = color_frame.get_height();
     int channel_num = color_frame.get_bytes_per_pixel();
-    uint8_t * color_data = (uint8_t*)color_frame.get_data();
+    const uint8_t * color_data = reinterpret_cast<const uint8_t *>(color_frame.get_data());
 
     for (size_t index = 0; index < valid_indices.size(); index++) {
       auto pnt_idx = valid_indices[index];
@@ -299,8 +325,8 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
       int pixy = static_cast<int>(j * height);
       int offset = (pixy * width + pixx) * channel_num;
       *iter_r = color_data[offset];
-      *iter_g = color_data[offset+1];
-      *iter_b = color_data[offset+2];
+      *iter_g = color_data[offset + 1];
+      *iter_b = color_data[offset + 2];
       ++iter_x;
       ++iter_y;
       ++iter_z;
@@ -312,15 +338,18 @@ void RealSenseD435::publishSparsePointCloud(const rs2::points & points, const rs
   }
 }
 
-void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time)
+void RealSenseD435::publishDensePointCloud(
+  const rs2::points & points,
+  const rs2::video_frame & color_frame,
+  const rclcpp::Time & time)
 {
   const rs2::vertex * vertex = points.get_vertices();
 
   if (!node_.get_node_options().use_intra_process_comms()) {
-    sensor_msgs::msg::PointCloud2::SharedPtr pc_msg = std::make_shared<sensor_msgs::msg::PointCloud2>();
-    //debug
-    //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
-    //
+    sensor_msgs::msg::PointCloud2::SharedPtr pc_msg =
+      std::make_shared<sensor_msgs::msg::PointCloud2>();
+    // RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p",
+    //   t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
     pc_msg->header.stamp = time;
     pc_msg->header.frame_id = DEFAULT_COLOR_OPTICAL_FRAME_ID;
     pc_msg->width = color_frame.get_width();
@@ -340,33 +369,33 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
     sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*pc_msg, "b");
 
     int channel_num = color_frame.get_bytes_per_pixel();
-    uint8_t * color_data = (uint8_t*)color_frame.get_data();
+    const uint8_t * color_data = reinterpret_cast<const uint8_t *>(color_frame.get_data());
 
-    for (size_t pnt_idx = 0; pnt_idx < pc_msg->width*pc_msg->height; pnt_idx++) {
-        *iter_x = vertex[pnt_idx].x;
-        *iter_y = vertex[pnt_idx].y;
-        *iter_z = vertex[pnt_idx].z;
+    for (size_t pnt_idx = 0; pnt_idx < pc_msg->width * pc_msg->height; pnt_idx++) {
+      *iter_x = vertex[pnt_idx].x;
+      *iter_y = vertex[pnt_idx].y;
+      *iter_z = vertex[pnt_idx].z;
 
-        *iter_r = color_data[pnt_idx*channel_num];
-        *iter_g = color_data[pnt_idx*channel_num+1];
-        *iter_b = color_data[pnt_idx*channel_num+2];
-        ++iter_x;
-        ++iter_y;
-        ++iter_z;
-        ++iter_r;
-        ++iter_g;
-        ++iter_b;
-      }
-      pointcloud_pub_->publish(*pc_msg);
+      *iter_r = color_data[pnt_idx * channel_num];
+      *iter_g = color_data[pnt_idx * channel_num + 1];
+      *iter_b = color_data[pnt_idx * channel_num + 2];
+      ++iter_x;
+      ++iter_y;
+      ++iter_z;
+      ++iter_r;
+      ++iter_g;
+      ++iter_b;
+    }
+    pointcloud_pub_->publish(*pc_msg);
   } else {
-    sensor_msgs::msg::PointCloud2::UniquePtr pc_msg = std::make_unique<sensor_msgs::msg::PointCloud2>();
-    //debug
-    //RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p", t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
-    //
+    sensor_msgs::msg::PointCloud2::UniquePtr pc_msg =
+      std::make_unique<sensor_msgs::msg::PointCloud2>();
+    // RCLCPP_INFO(node_->get_logger(), "timestamp: %f, address: %p",
+    //   t.seconds(), reinterpret_cast<std::uintptr_t>(pc_msg.get()));
     pc_msg->header.stamp = time;
     pc_msg->header.frame_id = DEFAULT_COLOR_OPTICAL_FRAME_ID;
     pc_msg->width = color_frame.get_width();
-    pc_msg->height =  color_frame.get_height();
+    pc_msg->height = color_frame.get_height();
     pc_msg->point_step = 3 * sizeof(float) + 3 * sizeof(uint8_t);
     pc_msg->row_step = pc_msg->point_step * pc_msg->width;
     pc_msg->is_dense = true;
@@ -382,16 +411,16 @@ void RealSenseD435::publishDensePointCloud(const rs2::points & points, const rs2
     sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*pc_msg, "b");
 
     int channel_num = color_frame.get_bytes_per_pixel();
-    uint8_t * color_data = (uint8_t*)color_frame.get_data();
+    const uint8_t * color_data = reinterpret_cast<const uint8_t *>(color_frame.get_data());
 
-    for (size_t pnt_idx = 0; pnt_idx < pc_msg->width*pc_msg->height; pnt_idx++) {
+    for (size_t pnt_idx = 0; pnt_idx < pc_msg->width * pc_msg->height; pnt_idx++) {
       *iter_x = vertex[pnt_idx].x;
       *iter_y = vertex[pnt_idx].y;
       *iter_z = vertex[pnt_idx].z;
 
-      *iter_r = color_data[pnt_idx*channel_num];
-      *iter_g = color_data[pnt_idx*channel_num+1];
-      *iter_b = color_data[pnt_idx*channel_num+2];
+      *iter_r = color_data[pnt_idx * channel_num];
+      *iter_g = color_data[pnt_idx * channel_num + 1];
+      *iter_b = color_data[pnt_idx * channel_num + 2];
       ++iter_x;
       ++iter_y;
       ++iter_z;

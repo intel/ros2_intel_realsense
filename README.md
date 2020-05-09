@@ -6,20 +6,18 @@
 
 ## Installation Instructions
 
-The following instructions were verified with ROS2 Dashing on Ubuntu 18.04.
+The following instructions were verified with ROS2 Foxy on Ubuntu 20.04.
+The software is verified with ROS2 Dashing on Ubuntu 18.04 also, with the same instructions replacing "foxy" with "dashing".
 
 ### Install Dependencies
-#### 1. Install ROS2 packages [ros-dashing-desktop](https://index.ros.org/doc/ros2/Installation/Linux-Install-Debians/)
+#### 1. Install ROS2 packages [ros-foxy-desktop](https://index.ros.org/doc/ros2/Installation/Linux-Install-Debians/)
 
 #### 2. Install ROS2 dependences
   Currently, we support librealsense master branch.
   ```bash
-  sudo apt-get install ros-dashing-cv-bridge ros-dashing-librealsense2 ros-dashing-message-filters ros-dashing-image-transport
+  sudo apt-get install ros-foxy-librealsense2
   ```
   * [Intel® RealSense™ SDK 2.0](https://github.com/IntelRealSense/librealsense.git)
-  * [cv_bridge](https://github.com/ros-perception/vision_opencv/tree/ros2/cv_bridge)
-  * [ros2_message_filters](https://github.com/ros2/message_filters)
-  * [ros2 image_transport](https://github.com/ros-perception/image_common/tree/ros2)
   
 #### 3. Install other non-ROS debian packages
   ```
@@ -29,7 +27,7 @@ The following instructions were verified with ROS2 Dashing on Ubuntu 18.04.
 <!--
 ### Install ros2_intel_realsense binary packages
   ```
-  sudo apt-get install ros-dashing-realsense-msgs ros-dashing-realsense-ros
+  sudo apt-get install ros-foxy-realsense-examples ros-foxy-realsense-ros ros-foxy-realsense-msgs ros-foxy-realsense-node
   ```
   The ros2_intel_realsense packages installation have been completed. You could jump to [Usage Instructions](https://github.com/intel/ros2_intel_realsense#usage-instructions) for executing, you could also install ros2_intel_realsense from source for more features. -->
 
@@ -42,7 +40,7 @@ git clone https://github.com/intel/ros2_intel_realsense.git
 cd ros2_intel_realsense
 git checkout refactor
 # build
-source /opt/ros/dashing/setup.bash
+source /opt/ros/foxy/setup.bash
 cd ~/ros2_ws
 colcon build --symlink-install
 ```
@@ -63,7 +61,7 @@ To start the camera node in ROS2, plug in the camera, then type the following co
 #### Single camera, taking d435 for example:
 
 ```bash
-source /opt/ros/dashing/setup.bash
+source /opt/ros/foxy/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 ## using ros2 run
@@ -78,7 +76,7 @@ ros2 launch realsense_examples rs_camera.launch.py
 * Terminal 1:
 
 ```bash
-source /opt/ros/dashing/setup.bash
+source /opt/ros/foxy/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
@@ -88,7 +86,7 @@ ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_exam
 * Terminal 2:
 
 ```bash
-source /opt/ros/dashing/setup.bash
+source /opt/ros/foxy/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
@@ -98,7 +96,7 @@ ros2 run realsense_node realsense_node __params:=`ros2 pkg prefix realsense_exam
 * Or using ros2 launch :
 
 ```bash
-source /opt/ros/dashing/setup.bash
+source /opt/ros/foxy/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
@@ -109,7 +107,7 @@ ros2 launch realsense_examples rs_multiple_devices.launch.py
 #### Multi camera with tf(transform), taking d435 and t265 for example:
 
 ```bash
-source /opt/ros/dashing/setup.bash
+source /opt/ros/foxy/setup.bash
 source ~/ros2_ws/install/local_setup.bash
 
 cd ~/ros2_ws
@@ -140,6 +138,20 @@ Enable pointcloud
 
 ```bash
 ros2 param set <node_name> enable_pointcloud true
+```
+
+## Contribution Instructions
+
+Contirbution to this project is welcomed!
+For any patches pleaes make sure regression tests passed.
+For new features added please add test cases also.
+### Run Colcon test
+```bash
+# plugin the Realsense device
+# invoke colcon test
+colcon test --packages-select realsense_msgs realsense_node realsense_ros realsense_examples
+# check test logs
+vim log/latest_test/<package name as `realsense_xxx`>/stdout.log
 ```
 
 ## Published Topics
@@ -227,7 +239,6 @@ ros2 param set <node_name> enable_pointcloud true
 
 ## TODO
 
-* Add more tests
 * Merge sensor data from gyroscope and accelerator into one topic
 * Support diagnostics
 * Support reconfigure parameters by GUI

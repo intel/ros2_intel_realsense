@@ -12,28 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
 #include "camera_core.hpp"
+#include <string.h>
+#include <rclcpp/exceptions.hpp>
+#include <rclcpp/node.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <opencv2/opencv.hpp>
+
+#include <gtest/gtest.h>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 #include <chrono>
 
-#include "rclcpp/exceptions.hpp"
-#include "rclcpp/node.hpp"
-#include "rclcpp/rclcpp.hpp"
-
-#include "opencv2/opencv.hpp"
-
 void getCameraType()
 {
-
   rs2::context ctx_;
   auto device_list = ctx_.query_devices();
   rs2::device_list & list = device_list;
   if (0 == list.size()) {
-	std::cout <<  "No RealSense devices were found!" << std::endl;
+    std::cout << "No RealSense devices were found!" << std::endl;
   }
   for (auto && dev : list) {
     std::string pid_str = dev.get_info(RS2_CAMERA_INFO_PRODUCT_ID);
@@ -41,22 +40,23 @@ void getCameraType()
 
     std::cout << "pid is" << pid << std::endl;
 
-    switch(pid) {
+    switch (pid) {
       case RS435_RGB_PID:
-        camera_type = "D435";
+        snprintf(camera_type, strlen("D435") + 1, "D435");
         break;
       case RS435i_RGB_PID:
-        camera_type = "D435i";
+        snprintf(camera_type, strlen("D435i") + 1, "D435i");
         break;
       case RS_T265_PID:
-        camera_type = "T265";
+        snprintf(camera_type, strlen("T265") + 1, "T265");
         break;
       default:
         break;
     }
 
-    if (camera_type != "") 
+    if (strlen(camera_type)) {
       break;
+    }
   }
 
   std::cout << "camera_type is:" << camera_type << std::endl;
@@ -85,33 +85,32 @@ int encoding2Mat(const std::string & encoding)
 
 void getMsgInfo(rs2_stream stream, const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
-  g_encoding_recv[stream] = msg->encoding;
+  snprintf(g_encoding_recv[stream], msg->encoding.length() + 1, msg->encoding.c_str());
   g_width_recv[stream] = msg->width;
   g_height_recv[stream] = msg->height;
   g_step_recv[stream] = msg->step;
 }
 
-void getCameraInfo(rs2_stream stream, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void getCameraInfo(rs2_stream stream, const sensor_msgs::msg::CameraInfo::SharedPtr info_msg)
 {
   g_caminfo_height_recv[stream] = info_msg->height;
   g_caminfo_width_recv[stream] = info_msg->width;
 
-  g_dmodel_recv[stream] = info_msg->distortion_model;
-
+  snprintf(
+    g_dmodel_recv[stream], info_msg->distortion_model.length() + 1,
+    info_msg->distortion_model.c_str());
   // copy rotation matrix
-  for (unsigned int i = 0; i < sizeof(info_msg->r) / sizeof(double); i++)
-  {
+  for (unsigned int i = 0; i < sizeof(info_msg->r) / sizeof(double); i++) {
     g_caminfo_rotation_recv[stream][i] = info_msg->r[i];
   }
 
   // copy projection matrix
-  for (unsigned int i = 0; i < sizeof(info_msg->p) / sizeof(double); i++)
-  {
+  for (unsigned int i = 0; i < sizeof(info_msg->p) / sizeof(double); i++) {
     g_caminfo_projection_recv[stream][i] = info_msg->p[i];
   }
 }
 
-void imageDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void imageDepthCallback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
@@ -123,23 +122,24 @@ void imageDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, con
     depth_total += static_cast<float>(val);
     depth_count += 1;
   }
-  if (depth_count != 0)
-  {
+  if (depth_count != 0) {
     g_depth_avg = static_cast<float>(depth_total / depth_count);
   }
 
   getMsgInfo(RS2_STREAM_DEPTH, msg);
-  getCameraInfo(RS2_STREAM_DEPTH, info_msg);
-
-  for (unsigned int i = 0; i < 5; i++)
-  {
-    g_depth_caminfo_D_recv[i] = info_msg->d[i];
-  }
-
   g_depth_recv = true;
 }
 
-void imageColorCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void cameraDepthCallback(const sensor_msgs::msg::CameraInfo::SharedPtr info_msg)
+{
+  getCameraInfo(RS2_STREAM_DEPTH, info_msg);
+
+  for (unsigned int i = 0; i < 5; i++) {
+    g_depth_caminfo_D_recv[i] = info_msg->d[i];
+  }
+}
+
+void imageColorCallback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
@@ -157,17 +157,19 @@ void imageColorCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, con
   }
 
   getMsgInfo(RS2_STREAM_COLOR, msg);
-  getCameraInfo(RS2_STREAM_COLOR, info_msg);
-
-  for (unsigned int i = 0; i < 5; i++)
-  {
-    g_color_caminfo_D_recv[i] = info_msg->d[i];
-  }
-
   g_color_recv = true;
 }
 
-void imageInfrared1Callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void cameraColorCallback(const sensor_msgs::msg::CameraInfo::SharedPtr info_msg)
+{
+  getCameraInfo(RS2_STREAM_COLOR, info_msg);
+
+  for (unsigned int i = 0; i < 5; i++) {
+    g_color_caminfo_D_recv[i] = info_msg->d[i];
+  }
+}
+
+void imageInfrared1Callback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
@@ -185,17 +187,19 @@ void imageInfrared1Callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg,
   }
 
   getMsgInfo(RS2_STREAM_INFRARED, msg);
-  getCameraInfo(RS2_STREAM_INFRARED, info_msg);
-
-  for (unsigned int i = 0; i < 5; i++)
-  {
-    g_infrared1_caminfo_D_recv[1] = info_msg->d[i];
-  }
-
   g_infrared1_recv = true;
 }
 
-void imageInfrared2Callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void cameraInfraredCallback(const sensor_msgs::msg::CameraInfo::SharedPtr info_msg)
+{
+  getCameraInfo(RS2_STREAM_INFRARED, info_msg);
+
+  for (unsigned int i = 0; i < 5; i++) {
+    g_infrared1_caminfo_D_recv[1] = info_msg->d[i];
+  }
+}
+
+void imageInfrared2Callback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
@@ -215,79 +219,65 @@ void imageInfrared2Callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg,
     g_infrared2_avg = static_cast<float>(infrared2_total / infrared2_count);
   }
 
-  for (unsigned int i = 0; i < 5; i++)
-  {
-    g_infrared2_caminfo_D_recv[1] = info_msg->d[i];
-  }
   g_infrared2_recv = true;
 }
 
-void imageFisheye1Callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void imageFisheye1Callback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
 
-  uchar *fisheye1_data = frame.data;
+  uchar * fisheye1_data = frame.data;
   double fisheye1_total = 0.0;
   int fisheye1_count = 1;
-  for (unsigned int i = 0; i < msg->height * msg->width; i++)
-  {
-    if (*fisheye1_data > 0 && *fisheye1_data < 255)
-    {
+  for (unsigned int i = 0; i < msg->height * msg->width; i++) {
+    if (*fisheye1_data > 0 && *fisheye1_data < 255) {
       fisheye1_total += *fisheye1_data;
       fisheye1_count++;
     }
     fisheye1_data++;
   }
-  if (fisheye1_count != 0)
-  {
+  if (fisheye1_count != 0) {
     g_fisheye1_avg = static_cast<float>(fisheye1_total / fisheye1_count);
   }
 
   getMsgInfo(RS2_STREAM_FISHEYE, msg);
-  getCameraInfo(RS2_STREAM_FISHEYE, info_msg);
-
-  for (unsigned int i = 0; i < 5; i++)
-  {
-    g_fisheye1_caminfo_D_recv[i] = info_msg->d[i];
-  }
-
   g_fisheye1_recv = true;
 }
 
-void imageFisheye2Callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+void cameraFisheyeCallback(const sensor_msgs::msg::CameraInfo::SharedPtr info_msg)
+{
+  getCameraInfo(RS2_STREAM_FISHEYE, info_msg);
+
+  for (unsigned int i = 0; i < 5; i++) {
+    g_fisheye1_caminfo_D_recv[i] = info_msg->d[i];
+  }
+}
+
+void imageFisheye2Callback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
 
-  uchar *fisheye2_data = frame.data;
+  uchar * fisheye2_data = frame.data;
   double fisheye2_total = 0.0;
   int fisheye2_count = 1;
-  for (unsigned int i = 0; i < msg->height * msg->width; i++)
-  {
-    if (*fisheye2_data > 0 && *fisheye2_data < 255)
-    {
+  for (unsigned int i = 0; i < msg->height * msg->width; i++) {
+    if (*fisheye2_data > 0 && *fisheye2_data < 255) {
       fisheye2_total += *fisheye2_data;
       fisheye2_count++;
     }
     fisheye2_data++;
   }
-  if (fisheye2_count != 0)
-  {
+  if (fisheye2_count != 0) {
     g_fisheye2_avg = static_cast<float>(fisheye2_total / fisheye2_count);
   }
 
   getMsgInfo(RS2_STREAM_FISHEYE, msg);
-  getCameraInfo(RS2_STREAM_FISHEYE, info_msg);
-
-  for (unsigned int i = 0; i < 5; i++)
-  {
-    g_fisheye2_caminfo_D_recv[i] = info_msg->d[i];
-  }
-
   g_fisheye2_recv = true;
 }
-void imageAlignDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg, const sensor_msgs::msg::CameraInfo::ConstSharedPtr & info_msg)
+
+void imageAlignDepthCallback(const sensor_msgs::msg::Image::SharedPtr msg)
 {
   cv::Mat frame(msg->height, msg->width, encoding2Mat(msg->encoding),
     const_cast<unsigned char *>(msg->data.data()), msg->step);
@@ -299,14 +289,8 @@ void imageAlignDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg
     alignDepth_total += static_cast<float>(val);
     alignDepth_count += 1;
   }
-  if (alignDepth_count != 0)
-  {
+  if (alignDepth_count != 0) {
     g_alignDepth_avg = static_cast<float>(alignDepth_total / alignDepth_count);
-  }
-
-  for (unsigned int i = 0; i < 5; i++)
-  {
-    g_alignDepth_caminfo_D_recv[1] = info_msg->d[i];
   }
 
   g_alignDepth_recv = true;
@@ -334,26 +318,24 @@ void pcCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
 
 void accelCallback(const sensor_msgs::msg::Imu::SharedPtr imu_msg)
 {
-   g_accel_recv = false;
-   if (imu_msg->linear_acceleration_covariance[0] != -1.0)
-   {
-     if ((imu_msg->linear_acceleration.x != 0.000) || 
-         (imu_msg->linear_acceleration.y != 0.000) ||
-	 (imu_msg->linear_acceleration.y != 0.000))
-     {
-       g_accel_recv = true;
-     }
-   }
+  g_accel_recv = false;
+  if (imu_msg->linear_acceleration_covariance[0] != -1.0) {
+    if ((imu_msg->linear_acceleration.x != 0.000) ||
+      (imu_msg->linear_acceleration.y != 0.000) ||
+      (imu_msg->linear_acceleration.y != 0.000))
+    {
+      g_accel_recv = true;
+    }
+  }
 }
 
 void gyroCallback(const sensor_msgs::msg::Imu::SharedPtr imu_msg)
 {
   g_gyro_recv = false;
-  if (imu_msg->angular_velocity_covariance[0] != -1.0)
-  {
+  if (imu_msg->angular_velocity_covariance[0] != -1.0) {
     if ((imu_msg->angular_velocity.x != 0.0) ||
-        (imu_msg->angular_velocity.y != 0.0) ||
-        (imu_msg->angular_velocity.z != 0.0))
+      (imu_msg->angular_velocity.y != 0.0) ||
+      (imu_msg->angular_velocity.z != 0.0))
     {
       g_gyro_recv = true;
     }
@@ -362,31 +344,27 @@ void gyroCallback(const sensor_msgs::msg::Imu::SharedPtr imu_msg)
 
 TEST(RealsenseTests, testIsColorStreamEnabled)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_color)
-  {
-    EXPECT_TRUE(g_color_recv);
   }
-  else
-  {
+  if (g_enable_color) {
+    EXPECT_TRUE(g_color_recv);
+  } else {
     EXPECT_FALSE(g_color_recv);
   }
 }
 
 TEST(RealsenseTests, testColorStream)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_color)
-  {
+  }
+  if (g_enable_color) {
     EXPECT_GT(g_color_avg, 0);
-    if (!g_color_encoding_exp.empty())
-    {
+    if (strlen(g_color_encoding_exp)) {
       EXPECT_EQ(g_color_encoding_exp, g_encoding_recv[RS2_STREAM_COLOR]);
     }
-    if (g_color_step_exp > 0)
-    {
+    if (g_color_step_exp > 0) {
       EXPECT_EQ(g_color_step_exp, g_step_recv[RS2_STREAM_COLOR]);
     }
   }
@@ -394,17 +372,15 @@ TEST(RealsenseTests, testColorStream)
 
 TEST(RealsenseTests, testColorResolution)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_color)
-  {
+  }
+  if (g_enable_color) {
     EXPECT_TRUE(g_color_recv);
-    if (g_color_height_exp > 0)
-    {
+    if (g_color_height_exp > 0) {
       EXPECT_EQ(g_color_height_exp, g_height_recv[RS2_STREAM_COLOR]);
     }
-    if (g_color_width_exp > 0)
-    {
+    if (g_color_width_exp > 0) {
       EXPECT_EQ(g_color_width_exp, g_width_recv[RS2_STREAM_COLOR]);
     }
   }
@@ -412,17 +388,16 @@ TEST(RealsenseTests, testColorResolution)
 
 TEST(RealsenseTests, testColorCameraInfo)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_color)
-  {
+  }
+  if (g_enable_color) {
     EXPECT_EQ(g_width_recv[RS2_STREAM_COLOR], g_caminfo_width_recv[RS2_STREAM_COLOR]);
     EXPECT_EQ(g_height_recv[RS2_STREAM_COLOR], g_caminfo_height_recv[RS2_STREAM_COLOR]);
-    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_COLOR].c_str(), "plumb_bob");
+    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_COLOR], "plumb_bob");
 
     // verify rotation is equal to identity matrix
-    for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++)
-    {
+    for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++) {
       EXPECT_EQ(ROTATION_IDENTITY[i], g_caminfo_rotation_recv[RS2_STREAM_COLOR][i]);
     }
 
@@ -444,31 +419,27 @@ TEST(RealsenseTests, testColorCameraInfo)
 
 TEST(RealsenseTests, testIsDepthStreamEnabled)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_depth)
-  {
-    EXPECT_TRUE(g_depth_recv);
   }
-  else
-  {
+  if (g_enable_depth) {
+    EXPECT_TRUE(g_depth_recv);
+  } else {
     EXPECT_FALSE(g_depth_recv);
   }
 }
 
 TEST(RealsenseTests, testDepthStream)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_depth)
-  {
+  }
+  if (g_enable_depth) {
     EXPECT_GT(g_depth_avg, 0);
-    if (!g_depth_encoding_exp.empty())
-    {
+    if (strlen(g_depth_encoding_exp)) {
       EXPECT_EQ(g_depth_encoding_exp, g_encoding_recv[RS2_STREAM_DEPTH]);
     }
-    if (g_depth_step_exp > 0)
-    {
+    if (g_depth_step_exp > 0) {
       EXPECT_EQ(g_depth_step_exp, g_step_recv[RS2_STREAM_DEPTH]);
     }
   }
@@ -476,17 +447,15 @@ TEST(RealsenseTests, testDepthStream)
 
 TEST(RealsenseTests, testDepthResolution)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_depth)
-  {
+  }
+  if (g_enable_depth) {
     EXPECT_TRUE(g_depth_recv);
-    if (g_depth_height_exp > 0)
-    {
+    if (g_depth_height_exp > 0) {
       EXPECT_EQ(g_depth_height_exp, g_height_recv[RS2_STREAM_DEPTH]);
     }
-    if (g_depth_width_exp > 0)
-    {
+    if (g_depth_width_exp > 0) {
       EXPECT_EQ(g_depth_width_exp, g_width_recv[RS2_STREAM_DEPTH]);
     }
   }
@@ -494,19 +463,18 @@ TEST(RealsenseTests, testDepthResolution)
 
 TEST(RealsenseTests, testDepthCameraInfo)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_depth)
-  {
+  }
+  if (g_enable_depth) {
     EXPECT_EQ(g_width_recv[RS2_STREAM_DEPTH], g_caminfo_width_recv[RS2_STREAM_DEPTH]);
     EXPECT_EQ(g_height_recv[RS2_STREAM_DEPTH], g_caminfo_height_recv[RS2_STREAM_DEPTH]);
-    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_DEPTH].c_str(), "plumb_bob");
+    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_DEPTH], "plumb_bob");
 
     // verify rotation is equal to identity matrix
-     for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY)/sizeof(double); i++)
-     {
-       EXPECT_EQ(ROTATION_IDENTITY[i], g_caminfo_rotation_recv[RS2_STREAM_DEPTH][i]);
-     }
+    for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++) {
+      EXPECT_EQ(ROTATION_IDENTITY[i], g_caminfo_rotation_recv[RS2_STREAM_DEPTH][i]);
+    }
 
     // check projection matrix values are set
     EXPECT_TRUE(g_caminfo_projection_recv[RS2_STREAM_DEPTH][0] != 0.0);
@@ -526,41 +494,37 @@ TEST(RealsenseTests, testDepthCameraInfo)
 
 TEST(RealsenseTests, testIsInfrared1StreamEnabled)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_infrared1)
-  {
-    EXPECT_TRUE(g_infrared1_recv);
   }
-  else
-  {
+  if (g_enable_infrared1) {
+    EXPECT_TRUE(g_infrared1_recv);
+  } else {
     EXPECT_FALSE(g_infrared1_recv);
   }
 }
 
 TEST(RealsenseTests, testInfrared1Stream)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_infrared1)
-  {
+  }
+  if (g_enable_infrared1) {
     EXPECT_GT(g_infrared1_avg, 0);
   }
 }
 
 TEST(RealsenseTests, testInfrared1Resolution)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_infrared1)
-  {
+  }
+  if (g_enable_infrared1) {
     EXPECT_TRUE(g_infrared1_recv);
-    if (g_infrared1_height_exp > 0)
-    {
+    if (g_infrared1_height_exp > 0) {
       EXPECT_EQ(g_infrared1_height_exp, g_height_recv[RS2_STREAM_INFRARED]);
     }
-    if (g_infrared1_width_exp > 0)
-    {
+    if (g_infrared1_width_exp > 0) {
       EXPECT_EQ(g_infrared1_width_exp, g_width_recv[RS2_STREAM_INFRARED]);
     }
   }
@@ -568,17 +532,16 @@ TEST(RealsenseTests, testInfrared1Resolution)
 
 TEST(RealsenseTests, testInfrared1CameraInfo)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
-  if (g_enable_infrared1)
-  {
+  }
+  if (g_enable_infrared1) {
     EXPECT_EQ(g_width_recv[RS2_STREAM_INFRARED], g_caminfo_width_recv[RS2_STREAM_INFRARED]);
     EXPECT_EQ(g_height_recv[RS2_STREAM_INFRARED], g_caminfo_height_recv[RS2_STREAM_INFRARED]);
-    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_INFRARED].c_str(), "plumb_bob");
+    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_INFRARED], "plumb_bob");
 
     // verify rotation is equal to identity matrix
-    for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++)
-    {
+    for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++) {
       EXPECT_EQ(ROTATION_IDENTITY[i], g_caminfo_rotation_recv[RS2_STREAM_INFRARED][i]);
     }
 
@@ -598,10 +561,11 @@ TEST(RealsenseTests, testInfrared1CameraInfo)
   }
 }
 
-TEST(RealsenseTests, testInfrared2Stream) 
+TEST(RealsenseTests, testInfrared2Stream)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
+  }
   if (g_enable_infrared2) {
     EXPECT_GT(g_infrared2_avg, 0);
     EXPECT_TRUE(g_infrared2_recv);
@@ -612,41 +576,37 @@ TEST(RealsenseTests, testInfrared2Stream)
 
 TEST(RealsenseTests, testIsFisheye1StreamEnabled)
 {
-  if (!camera_type.empty() && camera_type != "T265")
+  if (strcmp(camera_type, "T265")) {
     GTEST_SKIP();
-  if (g_enable_fisheye1)
-  {
-    EXPECT_TRUE(g_fisheye1_recv);
   }
-  else
-  {
+  if (g_enable_fisheye1) {
+    EXPECT_TRUE(g_fisheye1_recv);
+  } else {
     EXPECT_FALSE(g_fisheye1_recv);
   }
 }
 
 TEST(RealsenseTests, testFisheye1Stream)
 {
-  if (!camera_type.empty() && camera_type != "T265")
+  if (strcmp(camera_type, "T265")) {
     GTEST_SKIP();
-  if (g_enable_fisheye1)
-  {
+  }
+  if (g_enable_fisheye1) {
     EXPECT_GT(g_fisheye1_avg, 0);
   }
 }
 
 TEST(RealsenseTests, testFisheye1Resolution)
 {
-  if (!camera_type.empty() && camera_type != "T265")
+  if (strcmp(camera_type, "T265")) {
     GTEST_SKIP();
-  if (g_enable_fisheye1)
-  {
+  }
+  if (g_enable_fisheye1) {
     EXPECT_TRUE(g_fisheye1_recv);
-    if (g_fisheye1_height_exp > 0)
-    {
+    if (g_fisheye1_height_exp > 0) {
       EXPECT_EQ(g_fisheye1_height_exp, g_height_recv[RS2_STREAM_FISHEYE]);
     }
-    if (g_fisheye1_width_exp > 0)
-    {
+    if (g_fisheye1_width_exp > 0) {
       EXPECT_EQ(g_fisheye1_width_exp, g_width_recv[RS2_STREAM_FISHEYE]);
     }
   }
@@ -654,17 +614,16 @@ TEST(RealsenseTests, testFisheye1Resolution)
 
 TEST(RealsenseTests, testFisheye1CameraInfo)
 {
-  if (!camera_type.empty() && camera_type != "T265")
+  if (strcmp(camera_type, "T265")) {
     GTEST_SKIP();
-  if (g_enable_fisheye1)
-  {
+  }
+  if (g_enable_fisheye1) {
     EXPECT_EQ(g_width_recv[RS2_STREAM_FISHEYE], g_caminfo_width_recv[RS2_STREAM_FISHEYE]);
     EXPECT_EQ(g_height_recv[RS2_STREAM_FISHEYE], g_caminfo_height_recv[RS2_STREAM_FISHEYE]);
-    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_FISHEYE].c_str(), "plumb_bob");
+    EXPECT_STREQ(g_dmodel_recv[RS2_STREAM_FISHEYE], "plumb_bob");
 
     // verify rotation is equal to identity matrix
-    for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++)
-    {
+    for (unsigned int i = 0; i < sizeof(ROTATION_IDENTITY) / sizeof(double); i++) {
       EXPECT_EQ(ROTATION_IDENTITY[i], g_caminfo_rotation_recv[RS2_STREAM_FISHEYE][i]);
     }
 
@@ -680,15 +639,13 @@ TEST(RealsenseTests, testFisheye1CameraInfo)
     EXPECT_EQ(g_caminfo_projection_recv[RS2_STREAM_FISHEYE][8], 0.0);
     EXPECT_EQ(g_caminfo_projection_recv[RS2_STREAM_FISHEYE][9], 0.0);
     EXPECT_TRUE(g_caminfo_projection_recv[RS2_STREAM_FISHEYE][10] != 0.0);
-    EXPECT_EQ(g_caminfo_projection_recv[RS2_STREAM_FISHEYE][11], 0.0); 
+    EXPECT_EQ(g_caminfo_projection_recv[RS2_STREAM_FISHEYE][11], 0.0);
 
     // T265 cameras have Fisheye distortion parameters
     // Only the first coefficient is used/valid
     bool any_are_zero = false;
-    for (unsigned int i = 0; i < 1; i++)
-    {
-      if (g_fisheye1_caminfo_D_recv[i] == 0.0)
-      {
+    for (unsigned int i = 0; i < 1; i++) {
+      if (g_fisheye1_caminfo_D_recv[i] == 0.0) {
         any_are_zero = true;
       }
     }
@@ -696,10 +653,11 @@ TEST(RealsenseTests, testFisheye1CameraInfo)
   }
 }
 
-TEST(RealsenseTests, testFisheye2Stream) 
+TEST(RealsenseTests, testFisheye2Stream)
 {
-  if (!camera_type.empty() && camera_type != "T265")
+  if (strcmp(camera_type, "T265")) {
     GTEST_SKIP();
+  }
   if (g_enable_fisheye2) {
     EXPECT_GT(g_fisheye2_avg, 0);
     EXPECT_TRUE(g_fisheye2_recv);
@@ -710,8 +668,9 @@ TEST(RealsenseTests, testFisheye2Stream)
 
 TEST(RealsenseTests, testPointCloud)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
+  }
   if (g_enable_pc) {
     EXPECT_GT(g_pc_depth_avg, 0);
     EXPECT_TRUE(g_pc_recv);
@@ -720,13 +679,14 @@ TEST(RealsenseTests, testPointCloud)
   }
 }
 
-TEST(RealsenseTests, testAlignDepth) 
+TEST(RealsenseTests, testAlignDepth)
 {
-  if (!camera_type.empty() && camera_type != "D435" && camera_type != "D435i")
+  if (strlen(camera_type) && strcmp(camera_type, "D435") && strcmp(camera_type, "D435i")) {
     GTEST_SKIP();
+  }
   if (g_enable_alignDepth) {
     EXPECT_GT(g_alignDepth_avg, 0);
-    EXPECT_TRUE(g_alignDepth_recv);    
+    EXPECT_TRUE(g_alignDepth_recv);
   } else {
     EXPECT_TRUE(g_alignDepth_recv);
   }
@@ -734,15 +694,13 @@ TEST(RealsenseTests, testAlignDepth)
 
 TEST(RealsenseTests, testImu)
 {
-  if (!camera_type.empty() && camera_type != "D435i" && camera_type != "T265")
+  if (strcmp(camera_type, "D435i") && strcmp(camera_type, "T265")) {
     GTEST_SKIP();
-  if (g_enable_imu)
-  {
+  }
+  if (g_enable_imu) {
     EXPECT_TRUE(g_accel_recv);
     EXPECT_TRUE(g_gyro_recv);
-  }
-  else
-  {
+  } else {
     EXPECT_FALSE(g_accel_recv);
     EXPECT_FALSE(g_gyro_recv);
   }
@@ -754,27 +712,46 @@ int main(int argc, char * argv[])
   rclcpp::init(argc, argv);
   getCameraType();
   auto node = rclcpp::Node::make_shared("realsense_camera");
-  rmw_qos_profile_t custom_qos = rmw_qos_profile_default;
 
-  RCLCPP_INFO(node->get_logger(), "Create a node for %s Camera", camera_type.c_str());
-  auto depth_sub = image_transport::create_camera_subscription(node.get(), "/camera/depth/image_rect_raw", imageDepthCallback, "raw", custom_qos);
-  auto color_sub = image_transport::create_camera_subscription(node.get(),"/camera/color/image_raw", imageColorCallback, "raw", custom_qos);
-  auto infra1_sub = image_transport::create_camera_subscription(node.get(), "/camera/infra1/image_rect_raw", imageInfrared1Callback, "raw", custom_qos);
-  auto infra2_sub = image_transport::create_camera_subscription(node.get(), "/camera/infra2/image_rect_raw", imageInfrared2Callback, "raw", custom_qos);
-  auto alginDepth_sub = image_transport::create_camera_subscription(node.get(), "/camera/aligned_depth_to_color/image_raw", imageAlignDepthCallback, "raw", custom_qos);
-  auto sub_pointcloud = node->create_subscription<sensor_msgs::msg::PointCloud2>("camera/pointcloud", rclcpp::QoS(1), pcCallback);
-  auto sub_accel = node->create_subscription<sensor_msgs::msg::Imu>("/camera/accel/sample", rclcpp::QoS(1), accelCallback);
-  auto sub_gyro = node->create_subscription<sensor_msgs::msg::Imu>("/camera/gyro/sample", rclcpp::QoS(1), gyroCallback);
-  auto fisheye1_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye1/image_raw", imageFisheye1Callback, "raw", custom_qos);
-  auto fisheye2_sub = image_transport::create_camera_subscription(node.get(), "/camera/fisheye2/image_raw", imageFisheye2Callback, "raw", custom_qos);
+  RCLCPP_INFO(node->get_logger(), "Create a node for %s Camera", camera_type);
+  auto depth_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    "/camera/depth/image_rect_raw", rclcpp::QoS(1), imageDepthCallback);
+  auto depthcam_sub = node->create_subscription<sensor_msgs::msg::CameraInfo>(
+    "/camera/depth/camera_info", rclcpp::QoS(1), cameraDepthCallback);
+  auto color_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    "/camera/color/image_raw", rclcpp::QoS(
+      1), imageColorCallback);
+  auto colorcam_sub = node->create_subscription<sensor_msgs::msg::CameraInfo>(
+    "/camera/color/camera_info", rclcpp::QoS(1), cameraColorCallback);
+  auto infra1_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    "/camera/infra1/image_rect_raw", rclcpp::QoS(1), imageInfrared1Callback);
+  auto infracam_sub = node->create_subscription<sensor_msgs::msg::CameraInfo>(
+    "/camera/infra1/camera_info", rclcpp::QoS(1), cameraInfraredCallback);
+  auto infra2_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    "/camera/infra2/image_rect_raw", rclcpp::QoS(1), imageInfrared2Callback);
+  auto alginDepth_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    "/camera/aligned_depth_to_color/image_raw", rclcpp::QoS(1), imageAlignDepthCallback);
+  auto sub_pointcloud = node->create_subscription<sensor_msgs::msg::PointCloud2>(
+    "camera/pointcloud", rclcpp::QoS(1), pcCallback);
+  auto sub_accel = node->create_subscription<sensor_msgs::msg::Imu>(
+    "/camera/accel/sample", rclcpp::QoS(
+      1), accelCallback);
+  auto sub_gyro = node->create_subscription<sensor_msgs::msg::Imu>(
+    "/camera/gyro/sample", rclcpp::QoS(
+      1), gyroCallback);
+  auto fisheye1_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    "/camera/fisheye1/image_raw", rclcpp::QoS(1), imageFisheye1Callback);
+  auto fisheyecam_sub = node->create_subscription<sensor_msgs::msg::CameraInfo>(
+    "/camera/fisheye1/camera_info", rclcpp::QoS(1), cameraFisheyeCallback);
+  auto fisheye2_sub = node->create_subscription<sensor_msgs::msg::Image>(
+    "/camera/fisheye2/image_raw", rclcpp::QoS(1), imageFisheye2Callback);
 
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(node);
+  system("realsense_node &");
   const std::chrono::steady_clock::time_point max_runtime =
     std::chrono::steady_clock::now() + std::chrono::seconds(30);
-  system("realsense_node &");
-  while (rclcpp::ok())
-  {
+  while (rclcpp::ok()) {
     if (std::chrono::steady_clock::now() >= max_runtime) {
       break;
     }
