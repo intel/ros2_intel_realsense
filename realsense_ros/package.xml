@@ -17,7 +17,6 @@
   <depend>tf2_ros</depend>
   <depend>librealsense2</depend>
   <depend>realsense_msgs</depend>
-  <depend>image_transport</depend>
 
   <exec_depend>launch_ros</exec_depend>
   

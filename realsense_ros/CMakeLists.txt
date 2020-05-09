@@ -140,7 +140,6 @@ if(BUILD_TESTING)
   find_package(tf2_ros REQUIRED)
   find_package(realsense_msgs)
   find_package(realsense2)
-  find_package(image_transport REQUIRED)
 
   # the following line skips the linter which checks for copyrights
   # uncomment the line when a copyright and license is not present in all source files
@@ -158,22 +157,22 @@ if(BUILD_TESTING)
       )
       target_link_libraries(${target}
         ${realsense2_LIBRARIES}
-	${PROJECT_NAME})
+        ${PROJECT_NAME})
       ament_target_dependencies(${target}
         "rclcpp"
         "nav_msgs"
         "sensor_msgs"
         "tf2"
-	"tf2_ros"
+        "tf2_ros"
         "realsense_msgs"
-        "realsense2"
-        "image_transport")
+        "realsense2")
     endif()
   endmacro()
 
-  custom_gtest(unittest_function
-    "tests/unittest_function.cpp"
-    TIMEOUT 300)
+  # unittest need rework for teardown
+  #custom_gtest(unittest_function
+  #  "tests/unittest_function.cpp"
+  #  TIMEOUT 300)
   custom_gtest(camera_core
     "tests/camera_core.cpp"
     TIMEOUT 300)

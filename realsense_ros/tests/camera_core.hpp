@@ -39,13 +39,10 @@
 #include "realsense/rs_constants.hpp"
 #include "realsense/rs_base.hpp"
 
-#include "image_transport/image_transport.h"
-#include "image_transport/camera_subscriber.h"
-
 const int STREAM_COUNT = 10;
-const uint16_t RS435_RGB_PID = 0x0b07; // AWGC
-const uint16_t RS435i_RGB_PID = 0x0B3A; // AWGC_MM
-const uint16_t RS_T265_PID = 0x0b37; // T265
+const uint16_t RS435_RGB_PID = 0x0b07;  // AWGC
+const uint16_t RS435i_RGB_PID = 0x0B3A;  // AWGC_MM
+const uint16_t RS_T265_PID = 0x0b37;  // T265
 const double ROTATION_IDENTITY[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 
 int g_color_height_exp = 480;
@@ -59,8 +56,8 @@ int g_fisheye1_width_exp = 848;
 
 uint32_t g_depth_step_exp;
 uint32_t g_color_step_exp;
-std::string g_depth_encoding_exp;
-std::string g_color_encoding_exp;
+char g_depth_encoding_exp[] = "";
+char g_color_encoding_exp[] = "";
 
 bool g_enable_color = true;
 bool g_enable_depth = true;
@@ -95,8 +92,7 @@ float g_fisheye2_avg = 0.0f;
 int g_height_recv[STREAM_COUNT] = {0};
 int g_width_recv[STREAM_COUNT] = {0};
 uint32_t g_step_recv[STREAM_COUNT] = {0};  // Received stream step.
-
-std::string g_encoding_recv[STREAM_COUNT];  // Expected stream encoding.
+char g_encoding_recv[STREAM_COUNT][32] = {""};  // Received stream encoding.
 
 int g_caminfo_height_recv[STREAM_COUNT] = {0};
 int g_caminfo_width_recv[STREAM_COUNT] = {0};
@@ -111,8 +107,8 @@ double g_fisheye2_caminfo_D_recv[5] = {0.0};
 double g_caminfo_rotation_recv[STREAM_COUNT][9] = {{0.0}};
 double g_caminfo_projection_recv[STREAM_COUNT][12] = {{0.0}};
 
-std::string g_dmodel_recv[STREAM_COUNT];
-std::string camera_type;
+char g_dmodel_recv[STREAM_COUNT][32] = {""};
+char camera_type[32] = "";
 
 
 #endif  // CAMERA_CORE_H  // NOLINT(build/header_guard)
