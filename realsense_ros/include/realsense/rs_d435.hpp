@@ -15,6 +15,7 @@
 #ifndef REALSENSE__RS_D435_HPP_
 #define REALSENSE__RS_D435_HPP_
 
+#include <vector>
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
@@ -22,20 +23,24 @@
 #include "realsense/rs_base.hpp"
 #include "realsense/rs_constants.hpp"
 
-using namespace rclcpp::node_interfaces;
-
 namespace realsense
 {
+// using NodeInterface = rclcpp::node_interfaces;
+
 class RealSenseD435 : public RealSenseBase
 {
 public:
   RealSenseD435(rs2::context ctx, rs2::device dev, rclcpp::Node & node);
   virtual ~RealSenseD435() = default;
-  virtual void publishTopicsCallback(const rs2::frame & frame) override;
-  virtual Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
+  void publishTopicsCallback(const rs2::frame & frame) override;
+  Result paramChangeCallback(const std::vector<rclcpp::Parameter> & params) override;
   void publishAlignedDepthTopic(const rs2::frame & frame, const rclcpp::Time & time);
-  void publishSparsePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time);
-  void publishDensePointCloud(const rs2::points & points, const rs2::video_frame & color_frame, const rclcpp::Time & time);
+  void publishSparsePointCloud(
+    const rs2::points & points, const rs2::video_frame & color_frame,
+    const rclcpp::Time & time);
+  void publishDensePointCloud(
+    const rs2::points & points, const rs2::video_frame & color_frame,
+    const rclcpp::Time & time);
   void updateStreamCalibData(const rs2::video_stream_profile & video_profile);
 
 protected:

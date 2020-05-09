@@ -15,6 +15,10 @@
 #ifndef REALSENSE__RS_BASE_HPP_
 #define REALSENSE__RS_BASE_HPP_
 
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
@@ -42,7 +46,7 @@ public:
     x *= factor;
     y *= factor;
     z *= factor;
-    return (*this);
+    return *this;
   }
 
   Float3 & operator+=(const Float3 & other)
@@ -50,7 +54,7 @@ public:
     x += other.x;
     y += other.y;
     z += other.z;
-    return (*this);
+    return *this;
   }
 };
 
@@ -65,11 +69,16 @@ public:
   void setupStream(const stream_index_pair & stream);
   void publishImageTopic(const rs2::frame & frame, const rclcpp::Time & time);
   void updateVideoStreamCalibData(const rs2::video_stream_profile & video_profile);
-  void publishStaticTransforms(const rs2::stream_profile & base_profile, const std::vector<rs2::stream_profile> & active_profiles);
-  void calculateTFAndPublish(const rs2::stream_profile & stream_in, const rs2::stream_profile & base_profile);
-  void composeTFMsgAndPublish(const rclcpp::Time & t, const Float3 & translation,
-                       const tf2::Quaternion & q, const std::string & from,
-                       const std::string & to);
+  void publishStaticTransforms(
+    const rs2::stream_profile & base_profile,
+    const std::vector<rs2::stream_profile> & active_profiles);
+  void calculateTFAndPublish(
+    const rs2::stream_profile & stream_in,
+    const rs2::stream_profile & base_profile);
+  void composeTFMsgAndPublish(
+    const rclcpp::Time & t, const Float3 & translation,
+    const tf2::Quaternion & q, const std::string & from,
+    const std::string & to);
   tf2::Quaternion rotationMatrixToQuaternion(const float rotation[9]) const;
 
   void printDeviceInfo();
@@ -77,27 +86,31 @@ public:
   void printActiveStreamProfiles();
   void printStreamProfiles(const std::vector<rs2::stream_profile> & profile_list);
   void startWorkThread();
+
 protected:
   Result toggleStream(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeResolution(const stream_index_pair & stream, const rclcpp::Parameter & param);
   Result changeFPS(const stream_index_pair & stream, const rclcpp::Parameter & param);
-  void toMsg(const std_msgs::msg::Header& header,
-    const std::string& encoding, const cv::Mat& image, sensor_msgs::msg::Image & ros_image);
-  sensor_msgs::msg::Image::SharedPtr toMsg(const std_msgs::msg::Header& header,
-    const std::string& encoding, const cv::Mat& image = cv::Mat());
+  void toMsg(
+    const std_msgs::msg::Header & header,
+    const std::string & encoding, const cv::Mat & image, sensor_msgs::msg::Image & ros_image);
+  sensor_msgs::msg::Image::SharedPtr toMsg(
+    const std_msgs::msg::Header & header,
+    const std::string & encoding, const cv::Mat & image = cv::Mat());
 
   typedef struct VideoStreamInfo
   {
-    //rs2_format format;
+    // rs2_format format;
     int width, height, fps;
-    VideoStreamInfo(int w, int h, int f) {
+    VideoStreamInfo(int w, int h, int f)
+    {
       width = w;
       height = h;
       fps = f;
     }
 
     VideoStreamInfo() {}
-  }VideoStreamInfo;
+  } VideoStreamInfo;
 
   rclcpp::Node & node_;
   rs2::context ctx_;
@@ -110,18 +123,20 @@ protected:
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
   rclcpp::TimerBase::SharedPtr timer_;
   std::map<stream_index_pair, bool> enable_ = {{COLOR, false}, {DEPTH, false},
-                                               {INFRA1, false}, {INFRA2, false},
-                                               {ACCEL, false}, {GYRO, false},
-                                               {FISHEYE1, false}, {FISHEYE2, false},
-                                               {POSE, false}};
+    {INFRA1, false}, {INFRA2, false},
+    {ACCEL, false}, {GYRO, false},
+    {FISHEYE1, false}, {FISHEYE2, false},
+    {POSE, false}};
 
   std::map<stream_index_pair, VideoStreamInfo> stream_info_;
   std::map<stream_index_pair, sensor_msgs::msg::CameraInfo> camera_info_;
 
   std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr> image_pub_;
-  std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> camera_info_pub_;
+  std::map<stream_index_pair,
+    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr> camera_info_pub_;
   std::map<stream_index_pair, rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr> imu_pub_;
-  std::map<stream_index_pair, rclcpp::Publisher<realsense_msgs::msg::IMUInfo>::SharedPtr> imu_info_pub_;
+  std::map<stream_index_pair,
+    rclcpp::Publisher<realsense_msgs::msg::IMUInfo>::SharedPtr> imu_info_pub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 };
 }  // namespace realsense

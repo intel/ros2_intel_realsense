@@ -22,10 +22,11 @@
 #include "realsense/rs_factory.hpp"
 
 TEST(UnitTestFunction, testLibraryFunctions)
-{  
+{
   rclcpp::WallRate loop_rate(0.5);
-  
-  ASSERT_NO_THROW({
+
+  ASSERT_NO_THROW(
+  {
     auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>();
     rclcpp::spin_some(realsense_node);
     loop_rate.sleep();
@@ -34,9 +35,10 @@ TEST(UnitTestFunction, testLibraryFunctions)
 
 TEST(UnitTestFunction, testLibraryIncorrectInputs)
 {
-    ASSERT_THROW({
-      auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>("ZR300", "0");
-    }, rclcpp::exceptions::InvalidNamespaceError);
+  ASSERT_THROW(
+  {
+    auto realsense_node = std::make_shared<realsense::RealSenseNodeFactory>("ZR300", "0");
+  }, rclcpp::exceptions::InvalidNamespaceError);
 }
 
 int main(int argc, char ** argv)
