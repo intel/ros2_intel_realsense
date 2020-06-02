@@ -1,0 +1,46 @@
+# This is a basic workflow to help you get started with Actions
+
+name: refactor-CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the refactor branch
+on:
+  push:
+    branches: [ refactor ]
+  pull_request:
+    branches: [ refactor ]
+
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build-test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    # install ros2 dashing
+    - name: Setup ROS environment
+      uses: ros-tooling/setup-ros@0.0.20
+      with: 
+        required-ros-distributions: dashing
+
+    # install librealsense 2.34.0-0~realsense0.2251
+    - name: install librealsense
+      run: |
+        sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE
+        sudo sh -c 'echo "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo `lsb_release -cs` main" > /etc/apt/sources.list.d/librealsense.list'
+        sudo apt-get update && sudo apt-get install -y librealsense2=2.34.0-0~realsense0.2251 librealsense2-dev=2.34.0-0~realsense0.2251 librealsense2-udev-rules=2.34.0-0~realsense0.2251
+
+    # build 
+    - name: build
+      run: |
+        mkdir -p ~/ros2_ws/src
+        cp -rf /home/runner/work/ros2_intel_realsense/ros2_intel_realsense ~/ros2_ws/src
+        cd ~/ros2_ws
+        source /opt/ros/dashing/setup.sh
+        colcon build --symlink-install
