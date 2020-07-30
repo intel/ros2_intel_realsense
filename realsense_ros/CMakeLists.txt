@@ -97,7 +97,7 @@ add_library(${PROJECT_NAME} SHARED
 )
 
 target_link_libraries(${PROJECT_NAME}
-  ${realsense2_LIBRARIES}
+  realsense2::realsense2
   ${OpenCV_LIBRARIES}
 )
 
