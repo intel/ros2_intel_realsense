@@ -22,6 +22,7 @@ namespace realsense
   const uint16_t RS415_PID        = 0x0ad3; // ASRC
   const uint16_t RS435_RGB_PID    = 0x0b07; // AWGC
   const uint16_t RS435i_RGB_PID   = 0x0B3A; // AWGC_MM
+  const uint16_t RS455_RGB_PID    = 0x0B5C; // D455
   const uint16_t RS_T265_PID      = 0x0b37; // T265
   const uint16_t RS_USB2_PID      = 0x0ad6; // USB2
   using stream_index_pair = std::pair<rs2_stream, int>;
