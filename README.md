@@ -5,7 +5,7 @@ These are packages for using Intel RealSense cameras (D400 series) with ROS2.
 
 ## Installation Instructions
 
-The following instructions were verified with ROS2 Dashing on **Ubutnu 18.04**.
+The following instructions were verified with ROS2 Dashing on **Ubuntu 18.04**.
 
 ### Dependencies
 #### Install ROS2 packages [ros-dashing-desktop](https://index.ros.org/doc/ros2/Installation/Dashing/Linux-Install-Debians)
