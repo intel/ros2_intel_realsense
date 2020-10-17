@@ -73,6 +73,9 @@ find_package(OpenCV REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(realsense_msgs)
+find_package(Eigen3 REQUIRED)
+find_package(gflags REQUIRED)
+find_package(VTK REQUIRED)
 
 find_package(realsense2)
 if(NOT realsense2_FOUND)
@@ -110,6 +113,9 @@ ament_target_dependencies(${PROJECT_NAME}
   tf2_ros
   realsense2
   realsense_msgs
+  Eigen3
+  gflags
+  VTK
 )
 
 rclcpp_components_register_nodes(${PROJECT_NAME} "realsense::RealSenseNodeFactory")
