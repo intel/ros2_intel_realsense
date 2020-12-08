@@ -85,6 +85,7 @@ void RealSenseNodeFactory::startDevice()
         rs_node_ = std::make_unique<RealSenseD435>(ctx_, dev_, *this);
         break;
       case RS435i_RGB_PID:
+      case RS455_RGB_PID:
         RCLCPP_INFO(this->get_logger(), "Create a node for D435i Camera");
         rs_node_ = std::make_unique<RealSenseD435I>(ctx_, dev_, *this);
         break;
